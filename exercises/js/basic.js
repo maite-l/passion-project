@@ -1,20 +1,20 @@
 
-import vertexShaderRaw from './shaders/vertex.glsl?raw'
+// import vertexShaderRaw from './shaders/vertex.glsl?raw'
 // import fragmentShaderRaw from './shaders/fragment.glsl?raw'
 
-// const vertexShaderRaw = `
-// precision mediump float;
+const vertexShaderRaw = `
+precision mediump float;
 
-// attribute vec2 a_position;
-// attribute vec2 a_texCoord;
+attribute vec2 a_position;
+attribute vec2 a_texCoord;
 
-// varying vec2 uv;
+varying vec2 uv;
 
-// void main() {
-//     gl_Position = vec4(a_position, 1, 1);
-//     uv = a_texCoord;
-// }
-// `;
+void main() {
+    gl_Position = vec4(a_position, 1, 1);
+    uv = a_texCoord;
+}
+`;
 const fragmentShaderRaw = `
 precision mediump float;
 
