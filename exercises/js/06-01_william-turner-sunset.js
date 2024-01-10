@@ -30,16 +30,20 @@ void main() {
     vec2 st = gl_FragCoord.xy/u_resolution.xy;
     vec3 color = vec3(0.0);
 
+    st *= vec2(1.0,1.4);      
+    st += vec2(0.0,0.6);       
+    st = fract(st);
+
     vec3 pct1 = vec3(st.x);
 
 
     pct1.b = smoothstep(0.0,0.732, st.x);
     pct1.r = smoothstep(0.0, 0.620, st.x);
 
-    vec3 pct2 =  sin(vec3(st.y*9.)+1.084)-0.368;
+    vec3 pct2 =  sin(0.82*vec3(st.y*8.5)+1.084)-0.368;
     vec3 pct3 = 1.192 - vec3(st.y);
 
-    vec3 pctFinal = vec3(sqrt(exp(sin(st.x/PI)*1.048)-0.416));
+    vec3 pctFinal = vec3(sqrt(exp(sin(st.x/PI)*1.048)));
     pctFinal.br = vec2(pow((smoothstep(-0.264,1.404, st.x)),0.500));
 
     vec3 mixA = mix(colorA, colorB, pct1);
@@ -47,6 +51,7 @@ void main() {
     vec3 mixC = mix(colorC, colorA, pct2);
     vec3 mixD = mix(mixB, mixC, pct3);
     color = mix(mixA, mixD, pctFinal);
+    
 
 
     gl_FragColor = vec4(color,1.0);
