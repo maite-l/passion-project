@@ -1,7 +1,3 @@
-
-// import vertexShaderRaw from './shaders/vertex.glsl?raw'
-// import fragmentShaderRaw from './shaders/fragment.glsl?raw'
-
 const vertexShaderRaw = `
 precision mediump float;
 
