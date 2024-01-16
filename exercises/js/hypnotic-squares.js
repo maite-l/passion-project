@@ -15,80 +15,75 @@ void main() {
 const fragmentShaderRaw = `
 precision mediump float;
 
-#define TWO_PI 6.28318530718
+#define PI 3.14159265359
 
 uniform vec3 u_resolution;
 uniform float u_time;
 
 float box(in vec2 _st, in vec2 _size){
     _size = vec2(0.5) - _size*0.5;
-    vec2 uv = smoothstep(_size,
-                        _size+vec2(0.001),
-                        _st);
-    uv *= smoothstep(_size,
-                    _size+vec2(0.001),
-                    vec2(1.0)-_st);
+    vec2 uv = smoothstep(_size, _size+vec2(0.001), _st);
+    uv *= smoothstep(_size, _size+vec2(0.001), vec2(1.0)-_st);
     return uv.x*uv.y;
 }
 
-vec3 boxOutline(in vec2 _st, in vec2 _size){
-    vec3 result = vec3(0.0);
-    result += box(_st, _size);
-    result -= box(_st, _size - vec2(0.04));
-    return result;
+float random (vec2 st) {
+    return fract(sin(dot(st.xy,
+                         vec2(12.9898,78.233)))*
+        43758.5453123);
 }
 
 void main() {
     vec2 st = gl_FragCoord.xy/u_resolution.xy;
-    vec3 color = vec3(1.000,0.994,0.950);
+    float columns = 6.;
+    float rows = 6.;
+    vec2 zoom = vec2(columns, rows);
+    vec2 size = vec2(0.3, 1.);
 
-    vec3 redBoxes = vec3(0.0);
- 	vec3 yellowBoxes = vec3(0.0);
-    vec3 blueBoxes = vec3(0.0);
-    vec3 outline = vec3(0.0);
+    st *= zoom;
 
-    st += vec2(0.5);
+    vec3 color = vec3(0.789,1.000,0.753);
 
-    redBoxes += box(st-vec2(0.090,0.830), vec2(0.180,0.350));
+    vec2 ipos = floor(st);
+    vec2 fpos = fract(st);
 
-    outline += boxOutline(st-vec2(0.040,0.830), vec2(0.120,0.380));
-    outline += boxOutline(st-vec2(0.090,0.920), vec2(0.220,0.20));
+    st = fpos;
 
-    outline += boxOutline(st-vec2(0.09,0.26), vec2(0.22,0.8));
+    float cellIndex = (ipos.x+((ipos.y)*zoom.y));
 
-    outline += boxOutline(st-vec2(0.09,0.26), vec2(0.22,0.8));
+    float squares;
+    squares = box(st, vec2(0.97));
+    float maxSteps = 6.;
+    float minSteps = 3.;
+    int steps = int(random(ipos)*(maxSteps-minSteps)+minSteps);
+    float direction = random(ipos+random(ipos))*5.;
 
-    outline += boxOutline(st-vec2(0.38,0.04), vec2(0.4,0.12));
-    outline += boxOutline(st-vec2(0.380,0.370), vec2(0.4,0.58));
-    outline += boxOutline(st-vec2(0.380,0.740), vec2(0.4,0.2));
-    outline += boxOutline(st-vec2(0.380,0.920), vec2(0.4,0.2));
+    for ( int i = 0; i < 6; i += 1) {
+        float size = (float(i)/(float(steps)+0.5)) + 0.1;
+        vec2 translate = vec2(0.);
+        if (i < steps) {
+            translate += vec2(size/2.5*(6.-float(i+1))/10.);
 
-    blueBoxes += box(st-vec2(0.790,0.04), vec2(0.460,0.12));
+            if (direction < 1.) {
+                translate *= vec2(1.);
+            } else if (direction < 2.) {
+                translate *= vec2(-1.);
+            } else if (direction < 3.) {
+                translate *= vec2(-1.,1.);
+            } else if (direction < 4.) {
+                translate *= vec2(1.,-1.);
+            } else {
+                translate *= vec2(0.);
+            }
 
-    outline += boxOutline(st-vec2(0.710,0.04), vec2(0.30,0.12));
-    outline += boxOutline(st-vec2(0.93,0.040), vec2(0.18,0.12));
+        	squares -= box(st+translate, vec2(size));
+    		squares += box(st+translate, vec2(size-0.05));
+        }
+    }
 
-    outline += boxOutline(st-vec2(0.710,0.37), vec2(0.30,0.58));
-    outline += boxOutline(st-vec2(0.93,0.37), vec2(0.18,0.58));
+    color = mix(color, vec3(0.189,0.146,0.420), squares);
 
-    outline += boxOutline(st-vec2(0.710,0.92-0.2+0.02), vec2(0.30,0.2));
-    outline += boxOutline(st-vec2(0.93,0.92-0.2+0.02), vec2(0.18,0.2));
-
-    outline += boxOutline(st-vec2(0.710,0.92), vec2(0.30,0.2));
-
-    yellowBoxes += box(st-vec2(0.920,0.830), vec2(0.160,0.350));
-
-
-    vec3 red = vec3(0.860,0.007,0.056);
-    vec3 blue = vec3(0.199,0.434,0.860);
-    vec3 yellow = vec3(0.860,0.781,0.053);
-    vec3 outlineColor = vec3(0.022,0.018,0.030);
-    color = mix(color, red, redBoxes);
-    color = mix(color, blue, blueBoxes);
-    color = mix(color, yellow, yellowBoxes);
-    color = mix(color, outlineColor, outline);
-
-    gl_FragColor = vec4(color,1.0);
+	gl_FragColor = vec4(color,1.0);
 }
 `;
 

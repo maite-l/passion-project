@@ -15,78 +15,73 @@ void main() {
 const fragmentShaderRaw = `
 precision mediump float;
 
-#define TWO_PI 6.28318530718
-
 uniform vec3 u_resolution;
 uniform float u_time;
 
+
+float random (vec2 st) {
+    return fract(sin(dot(st.xy,
+                         vec2(12.9898,78.233)))*
+        43758.5453123);
+}
 float box(in vec2 _st, in vec2 _size){
     _size = vec2(0.5) - _size*0.5;
-    vec2 uv = smoothstep(_size,
-                        _size+vec2(0.001),
-                        _st);
-    uv *= smoothstep(_size,
-                    _size+vec2(0.001),
-                    vec2(1.0)-_st);
+    vec2 uv = smoothstep(_size, _size+vec2(0.001), _st);
+    uv *= smoothstep(_size, _size+vec2(0.001), vec2(1.0)-_st);
     return uv.x*uv.y;
-}
-
-vec3 boxOutline(in vec2 _st, in vec2 _size){
-    vec3 result = vec3(0.0);
-    result += box(_st, _size);
-    result -= box(_st, _size - vec2(0.04));
-    return result;
 }
 
 void main() {
     vec2 st = gl_FragCoord.xy/u_resolution.xy;
-    vec3 color = vec3(1.000,0.994,0.950);
+    vec3 color = vec3(0.);
 
-    vec3 redBoxes = vec3(0.0);
- 	vec3 yellowBoxes = vec3(0.0);
-    vec3 blueBoxes = vec3(0.0);
-    vec3 outline = vec3(0.0);
+    vec3 border1 = 1. - vec3(box(st, vec2(0.9)));
+    vec3 border2 = 1. - vec3(box(st, vec2(0.9)));
+    border2 -= 1. - vec3(box(st, vec2(0.915)));
 
-    st += vec2(0.5);
+    st *= 4.;
+    st += vec2(u_time/5.,u_time/2.);
+    vec2 ipos = floor(st);
+    vec2 fpos = fract(st);
 
-    redBoxes += box(st-vec2(0.090,0.830), vec2(0.180,0.350));
+    for (int i = 0; i < 2; i++) {
+        if (random(ipos) < 0.3) 
+        {
+        	st *= 2.0;
+     		ipos = floor(st);
+     		fpos = fract(st);
+            float size = 1. - float(i+1)/20.;
+        	color = vec3(box(fpos, vec2(size)))*vec3(0.798,0.971,1.000);
 
-    outline += boxOutline(st-vec2(0.040,0.830), vec2(0.120,0.380));
-    outline += boxOutline(st-vec2(0.090,0.920), vec2(0.220,0.20));
+            for (int j = 1; j < 2; j++) {
+                if (random(ipos) < 0.3) {
+                    st *= 2.0;
+             		ipos = floor(st);
+             		fpos = fract(st);
+                	size = 1. - float(j+1)/10.;
+                    color = vec3(box(fpos, vec2(size)))*vec3(0.798,0.971,1.000);
+            	} 
+                else if (random(ipos) < 0.9) {
+                    color = vec3(box(fpos, vec2(size)))*vec3(0.798,0.971,1.000);
+                } 
+                else {
+                    color = vec3(0.);
+                }
+            }
 
-    outline += boxOutline(st-vec2(0.09,0.26), vec2(0.22,0.8));
-
-    outline += boxOutline(st-vec2(0.09,0.26), vec2(0.22,0.8));
-
-    outline += boxOutline(st-vec2(0.38,0.04), vec2(0.4,0.12));
-    outline += boxOutline(st-vec2(0.380,0.370), vec2(0.4,0.58));
-    outline += boxOutline(st-vec2(0.380,0.740), vec2(0.4,0.2));
-    outline += boxOutline(st-vec2(0.380,0.920), vec2(0.4,0.2));
-
-    blueBoxes += box(st-vec2(0.790,0.04), vec2(0.460,0.12));
-
-    outline += boxOutline(st-vec2(0.710,0.04), vec2(0.30,0.12));
-    outline += boxOutline(st-vec2(0.93,0.040), vec2(0.18,0.12));
-
-    outline += boxOutline(st-vec2(0.710,0.37), vec2(0.30,0.58));
-    outline += boxOutline(st-vec2(0.93,0.37), vec2(0.18,0.58));
-
-    outline += boxOutline(st-vec2(0.710,0.92-0.2+0.02), vec2(0.30,0.2));
-    outline += boxOutline(st-vec2(0.93,0.92-0.2+0.02), vec2(0.18,0.2));
-
-    outline += boxOutline(st-vec2(0.710,0.92), vec2(0.30,0.2));
-
-    yellowBoxes += box(st-vec2(0.920,0.830), vec2(0.160,0.350));
+        } else if (random(ipos) < 0.9) {
+            float size = 1. - 0.5*float(i+1)/20.;
+            color = vec3(box(fpos, vec2(0.98)))*vec3(0.798,0.971,1.000);
+        } else {
+            color = vec3(0.);
+        }
+    }
 
 
-    vec3 red = vec3(0.860,0.007,0.056);
-    vec3 blue = vec3(0.199,0.434,0.860);
-    vec3 yellow = vec3(0.860,0.781,0.053);
-    vec3 outlineColor = vec3(0.022,0.018,0.030);
-    color = mix(color, red, redBoxes);
-    color = mix(color, blue, blueBoxes);
-    color = mix(color, yellow, yellowBoxes);
-    color = mix(color, outlineColor, outline);
+
+
+    color = mix(color, vec3(0.798,0.971,1.000), border1);
+    color = mix(color, vec3(0.0), border2);
 
     gl_FragColor = vec4(color,1.0);
 }

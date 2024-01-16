@@ -15,10 +15,9 @@ void main() {
 const fragmentShaderRaw = `
 precision mediump float;
 
-#define TWO_PI 6.28318530718
-
 uniform vec3 u_resolution;
 uniform float u_time;
+
 
 float box(in vec2 _st, in vec2 _size){
     _size = vec2(0.5) - _size*0.5;
@@ -31,62 +30,45 @@ float box(in vec2 _st, in vec2 _size){
     return uv.x*uv.y;
 }
 
-vec3 boxOutline(in vec2 _st, in vec2 _size){
-    vec3 result = vec3(0.0);
-    result += box(_st, _size);
-    result -= box(_st, _size - vec2(0.04));
-    return result;
+float circle(in vec2 _st, in float _radius){
+    vec2 dist = _st-vec2(0.5);
+	return 1.-smoothstep(_radius-(_radius*0.01), _radius+(_radius*0.01), dot(dist,dist)*4.0);
+}
+
+float random (vec2 st) {
+    return fract(sin(dot(st.xy,
+                         vec2(12.9898,78.233)))*
+        43758.5453123);
 }
 
 void main() {
     vec2 st = gl_FragCoord.xy/u_resolution.xy;
     vec3 color = vec3(1.000,0.994,0.950);
 
-    vec3 redBoxes = vec3(0.0);
- 	vec3 yellowBoxes = vec3(0.0);
-    vec3 blueBoxes = vec3(0.0);
-    vec3 outline = vec3(0.0);
+    vec2 zoom = vec2(160.);
+    st *= zoom;
 
-    st += vec2(0.5);
+    vec2 ipos = floor(st);
+    vec2 fpos = fract(st);
 
-    redBoxes += box(st-vec2(0.090,0.830), vec2(0.180,0.350));
+    st = fpos;
 
-    outline += boxOutline(st-vec2(0.040,0.830), vec2(0.120,0.380));
-    outline += boxOutline(st-vec2(0.090,0.920), vec2(0.220,0.20));
+	vec3 grid = vec3(box(st, vec2(0.8)));
 
-    outline += boxOutline(st-vec2(0.09,0.26), vec2(0.22,0.8));
+    vec3 circlesRed;
+    vec3 circlesBlue;
+    if (random(ipos)<0.4){
+        circlesRed = vec3(circle(st, 0.85));
+        circlesRed -= vec3(circle(st, 0.35));
+    }
+    if (random(ipos)<0.2){
+        circlesBlue = vec3(circle(st, 0.85));
+        circlesBlue -= vec3(circle(st, 0.35));
+    }
 
-    outline += boxOutline(st-vec2(0.09,0.26), vec2(0.22,0.8));
-
-    outline += boxOutline(st-vec2(0.38,0.04), vec2(0.4,0.12));
-    outline += boxOutline(st-vec2(0.380,0.370), vec2(0.4,0.58));
-    outline += boxOutline(st-vec2(0.380,0.740), vec2(0.4,0.2));
-    outline += boxOutline(st-vec2(0.380,0.920), vec2(0.4,0.2));
-
-    blueBoxes += box(st-vec2(0.790,0.04), vec2(0.460,0.12));
-
-    outline += boxOutline(st-vec2(0.710,0.04), vec2(0.30,0.12));
-    outline += boxOutline(st-vec2(0.93,0.040), vec2(0.18,0.12));
-
-    outline += boxOutline(st-vec2(0.710,0.37), vec2(0.30,0.58));
-    outline += boxOutline(st-vec2(0.93,0.37), vec2(0.18,0.58));
-
-    outline += boxOutline(st-vec2(0.710,0.92-0.2+0.02), vec2(0.30,0.2));
-    outline += boxOutline(st-vec2(0.93,0.92-0.2+0.02), vec2(0.18,0.2));
-
-    outline += boxOutline(st-vec2(0.710,0.92), vec2(0.30,0.2));
-
-    yellowBoxes += box(st-vec2(0.920,0.830), vec2(0.160,0.350));
-
-
-    vec3 red = vec3(0.860,0.007,0.056);
-    vec3 blue = vec3(0.199,0.434,0.860);
-    vec3 yellow = vec3(0.860,0.781,0.053);
-    vec3 outlineColor = vec3(0.022,0.018,0.030);
-    color = mix(color, red, redBoxes);
-    color = mix(color, blue, blueBoxes);
-    color = mix(color, yellow, yellowBoxes);
-    color = mix(color, outlineColor, outline);
+    color = mix(color, vec3(0.214,0.350,0.160), 1.-grid);
+    color = mix(color, vec3(0.810,0.312,0.265), circlesRed);
+    color = mix(color, vec3(0.325,0.288,0.810), circlesBlue);
 
     gl_FragColor = vec4(color,1.0);
 }
@@ -167,8 +149,8 @@ const init = async () => {
     gl.enableVertexAttribArray(texCoordAttributeLocation);
     gl.vertexAttribPointer(texCoordAttributeLocation, 2, gl.FLOAT, false, 0, 0);
 
-    canvas.width = 600;
-    canvas.height = 600;
+    canvas.width = 1600;
+    canvas.height = 1600;
 
     gl.uniform3f(u_resolutionLocation, canvas.width, canvas.height, 0);
 
