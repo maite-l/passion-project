@@ -54,7 +54,7 @@
     gap: var(--gap);
     animation: scroll 40s linear infinite;
     animation-direction: reverse;
-}
+}       
 .overview__artwork {
     width: 33vw;
     height: 45vh;

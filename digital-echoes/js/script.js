@@ -64,6 +64,7 @@ const init = (canvas, fragmenShaderRaw) => {
     gl.enableVertexAttribArray(positionAttributeLocation);
     gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
 
+    console.log(canvas.clientWidth, canvas.clientHeight);
     canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight;
     gl.uniform3f(u_resolutionLocation, canvas.width, canvas.height, 0);
 
