@@ -1,0 +1,79 @@
+@import url(reset.css);
+@import url(general.css);
+
+.introduction {
+    display: grid;
+    align-items: end;
+    grid-template-columns: 1.4fr 1fr;
+    width: 80vw;
+    max-width: 70rem;
+    padding-block-start: 10vh;
+    padding-block-end: 14vh;
+    margin: auto;
+    gap: 6.5rem;
+}
+
+.introduction__title {
+    display: flex;
+    flex-direction: column;
+}
+
+.introduction__title--title {
+    font-size: 5.5rem;
+    font-weight: 700;
+}
+
+.introduction__title--subtitle {
+    font-size: 2.5rem;
+    line-height: 0.5;
+}
+.introduction__explanation {
+    font-family: 'elza', sans-serif;
+    font-weight: 300;
+}
+
+
+.overview {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+.overview {
+    --gap: 1rem;
+    display: flex;
+    overflow: hidden;
+    user-select: none;
+    gap: var(--gap);
+}
+
+.overview__content {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: space-around;
+    min-width: 100%;
+    gap: var(--gap);
+    animation: scroll 40s linear infinite;
+    animation-direction: reverse;
+}
+.overview__artwork {
+    width: 33vw;
+    height: 45vh;
+    object-fit: cover;
+    object-position: center;
+}
+
+canvas {
+    width: 33vw;
+    height: 45vh;
+}
+
+
+@keyframes scroll {
+    from {
+        transform: translateX(0);
+    }
+
+    to {
+        transform: translateX(calc(-100% - var(--gap)));
+    }
+}
