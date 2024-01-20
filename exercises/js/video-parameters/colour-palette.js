@@ -2,7 +2,7 @@
 const video = document.getElementById('video');
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
-const paletteDiv = document.getElementById('palette');
+const resultDiv = document.getElementById('result');
 
 
 const colourDifference = (colour1, colour2) => {
@@ -60,14 +60,14 @@ const getColours = () => {
     }
 
     // display colour palette
-    paletteDiv.innerHTML = '';
+    resultDiv.innerHTML = '';
     colourPalette.forEach(colour => {
         const colourDiv = document.createElement('div');
         colourDiv.style.width = '2rem';
         colourDiv.style.height = '2rem';
         colourDiv.style.display = 'inline-block';
         colourDiv.style.backgroundColor = colour;
-        paletteDiv.appendChild(colourDiv);
+        resultDiv.appendChild(colourDiv);
     });
 }
 
