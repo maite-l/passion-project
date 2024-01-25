@@ -405,7 +405,7 @@ void main() {
     color += bloom(uv);
 
     color += grain(uv);
-
+    
     color = dust(uv, color);
 
     outColor = color;
