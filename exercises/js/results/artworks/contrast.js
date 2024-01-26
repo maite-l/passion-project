@@ -172,12 +172,27 @@ void main() {
 
     vec2 tile = truchetPattern(fpos, skewedRandomValue);
 
+    // tile = st;
+
 
     float curve1 = circle(tile+vec2(0.5,0.5), 1.25);
     float curve2 = circle(tile+vec2(0.5,0.5), .75);
     float pattern = curve1 - curve2;
     pattern += circle(tile+vec2(0.,-0.5), 0.01);
     pattern += circle(tile+vec2(-0.5,0.), 0.01);
+    // float mask = circle(tile, abs(sin(u_time))*1.5);
+    // mask -= step(tile.x,1.-tile.y);
+    // mask += circle(tile+vec2(0.25,0.25), abs(sin(u_time))*2.5);
+
+    // float mask = circle(tile+vec2(0.5,0.5), abs(sin(u_time))*5.5);
+    // mask += circle(tile+vec2(0.,-1.), abs(sin(u_time))*3.5);
+    // mask += circle(tile+vec2(-1.,0.), abs(sin(u_time))*3.5);
+
+    float mask = circle(tile+vec2(0.2,0.2), max(0.0, sin(u_time)*1.1   ));
+    mask += circle(tile+vec2(-0.3,-0.7), max(0.0, sin(u_time)*1.1   ));
+    mask += circle(tile+vec2(-0.7,0.3), max(0.0, sin(u_time)*1.1   ));
+
+    pattern *= mask;
       
     colour = mix(colour, vec3(0.), pattern);
 
@@ -461,7 +476,7 @@ const ctx = canvasV.getContext('2d');
 const resultDiv = document.getElementById('result');
 
 let contrast = 0;
-let lastParameterUpdate = 0; 
+let lastParameterUpdate = 0;
 
 const processFrame = () => {
     if (video.paused || video.ended) return;
@@ -563,7 +578,7 @@ const initShaders = () => {
 
         // get colours from video every second
         const now = new Date().getTime();
-        if (now - lastParameterUpdate >= 1000) {
+        if (now - lastParameterUpdate >= 2000) {
             contrast = processFrame();
             console.log(contrast);
             if (contrast === undefined) {
@@ -604,7 +619,7 @@ const initShaders = () => {
 
 
 const getContrast = () => {
-   // get pixel data from the canvas
+    // get pixel data from the canvas
     const imageData = ctx.getImageData(0, 0, canvasV.width, canvasV.height).data;
 
     // calculate the average luminance of the image + normalise
