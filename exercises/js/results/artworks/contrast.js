@@ -131,6 +131,8 @@ float sdCircle( vec2 p, float r )
     return length(p) - r;
 }
 
+#define PI 3.1415926535897932384626433832795
+
 void main() {
 
     vec2 st = gl_FragCoord.xy/u_resolution.xy;
@@ -142,15 +144,15 @@ void main() {
     vec3 colourB = 1. - vec3(0.066,0.044,0.355);
     vec3 colourC = 1. - vec3(0.590,0.046,0.160);
 
-    vec3 grid1 = grid(st, 10., vec2(floor(u_time)), 0.3);
+    vec3 grid1 = grid(st, 10., vec2(floor(u_time/4.)), 0.3);
     colour = mix(colour, colourA, grid1);
 
-    vec3 grid2 = grid(st, 5., vec2(floor(u_time)), 0.2);
+    vec3 grid2 = grid(st, 5., vec2(floor(u_time/4.)), 0.2);
     float stripe = step(0.75, fract((st.x) * 50.));
     vec3 stripeGrid = grid2 * stripe;
     colour = mix(colour, colourC, stripeGrid);
 
-    vec3 grid3 = grid(st, 20., vec2(floor(u_time)), 0.2);
+    vec3 grid3 = grid(st, 20., vec2(floor(u_time/4.)), 0.2);
     colour = mix(colour, colourB, grid3);
 
 
@@ -160,6 +162,7 @@ void main() {
     vec2 fpos = fract(st);
     float circle1 = circle(st, 0.001);
     colour = mix(colour, vec3(1.), circle1);
+
 
     float skew = (ipos.y+1.) * u_contrast;
     float skewedRandomValue = random(vec2(pow(ipos.x, skew), pow(ipos.y, skew)));
@@ -172,25 +175,19 @@ void main() {
 
     vec2 tile = truchetPattern(fpos, skewedRandomValue);
 
-    // tile = st;
-
-
     float curve1 = circle(tile+vec2(0.5,0.5), 1.25);
     float curve2 = circle(tile+vec2(0.5,0.5), .75);
     float pattern = curve1 - curve2;
     pattern += circle(tile+vec2(0.,-0.5), 0.01);
     pattern += circle(tile+vec2(-0.5,0.), 0.01);
-    // float mask = circle(tile, abs(sin(u_time))*1.5);
-    // mask -= step(tile.x,1.-tile.y);
-    // mask += circle(tile+vec2(0.25,0.25), abs(sin(u_time))*2.5);
 
-    // float mask = circle(tile+vec2(0.5,0.5), abs(sin(u_time))*5.5);
-    // mask += circle(tile+vec2(0.,-1.), abs(sin(u_time))*3.5);
-    // mask += circle(tile+vec2(-1.,0.), abs(sin(u_time))*3.5);
+float timeFactor = sin((u_time - 1.) / 2. * PI) * 0.9;
+float scaledTimeFactor = abs(timeFactor) * 2.0 - 1.0;
 
-    float mask = circle(tile+vec2(0.2,0.2), max(0.0, sin(u_time)*1.1   ));
-    mask += circle(tile+vec2(-0.3,-0.7), max(0.0, sin(u_time)*1.1   ));
-    mask += circle(tile+vec2(-0.7,0.3), max(0.0, sin(u_time)*1.1   ));
+float mask = circle(tile + vec2(0.2, 0.2), max(0.0, scaledTimeFactor));
+mask += circle(tile + vec2(-0.3, -0.7), max(0.0, scaledTimeFactor));
+mask += circle(tile + vec2(-0.7, 0.3), max(0.0, scaledTimeFactor));
+
 
     pattern *= mask;
       
@@ -475,7 +472,7 @@ const canvasV = document.getElementById('c_video');
 const ctx = canvasV.getContext('2d');
 const resultDiv = document.getElementById('result');
 
-let contrast = 0;
+let contrast = 0.5;
 let lastParameterUpdate = 0;
 
 const processFrame = () => {
@@ -577,16 +574,13 @@ const initShaders = () => {
     const animate = (time = 0) => {
 
         // get colours from video every second
-        const now = new Date().getTime();
-        if (now - lastParameterUpdate >= 2000) {
+        if (Math.floor(time) % 2000 < 15) {
             contrast = processFrame();
             console.log(contrast);
             if (contrast === undefined) {
-                contrast = 0;
+                contrast = 0.5;
             }
-            lastParameterUpdate = now;
         }
-
         // render the first program into the texture in the framebuffer
         gl.useProgram(program1);
         // assign uniforms
