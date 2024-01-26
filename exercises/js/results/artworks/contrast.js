@@ -17,8 +17,14 @@ out vec4 outColor;
 
 uniform float u_time;
 uniform vec2 u_resolution;
+uniform float u_contrast;
 
-uniform float contrast;
+
+float random (in vec2 _st) {
+    return fract(sin(dot(_st.xy,
+                         vec2(12.9898,78.233)))*
+        43758.5453123);
+}
 
 vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
 vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
@@ -93,6 +99,21 @@ float snoise(vec2 v) {
     return 130.0 * dot(m, g);
 }
 
+
+vec3 grid (vec2 st, float size, vec2 offset, float threshold) {
+    st *= size;
+    st += offset;
+    vec2 ipos = floor(st);
+    vec2 fpos = fract(st);
+    vec3 grid = vec3(1.-step(snoise(ipos),threshold));
+    return grid;
+}
+
+float circle(in vec2 _st, in float _radius){
+    vec2 dist = _st-vec2(0.5);
+	return 1.-smoothstep(_radius-(_radius*0.01), _radius+(_radius*0.01), dot(dist,dist)*4.0);
+}
+
 vec2 truchetPattern(in vec2 _st, in float _index){
     _index = fract(((_index-0.5)*2.0));
     if (_index > 0.75) {
@@ -105,15 +126,9 @@ vec2 truchetPattern(in vec2 _st, in float _index){
     return _st;
 }
 
-
-vec3 grid (vec2 st, float size, vec2 offset1, vec2 offset2, float threshold) {
-    vec2 st3 = st * size;
-    st3 += offset1;
-    st3 += offset2;
-    vec2 ipos3 = floor(st3);
-    vec2 fpos3 = fract(st3);
-    vec3 grid = vec3(1.-step(snoise(ipos3),threshold));
-    return grid;
+float sdCircle( vec2 p, float r )
+{
+    return length(p) - r;
 }
 
 void main() {
@@ -121,15 +136,52 @@ void main() {
     vec2 st = gl_FragCoord.xy/u_resolution.xy;
     st.x *= u_resolution.x / u_resolution.y;
 
-    vec3 colour = vec3(0.,0.,0.);
+    vec3 colour = vec3(1.,1.,1.);
 
-    vec3 colourA = 1. - vec3(0.434,0.710,0.336);
-    vec3 colourB = 1. - vec3(0.710,0.118,0.562);
-    vec3 colourC = 1. - vec3(0.293,0.393,0.710);
+    vec3 colourA = 1. - vec3(0.287,0.372,0.540);
+    vec3 colourB = 1. - vec3(0.066,0.044,0.355);
+    vec3 colourC = 1. - vec3(0.590,0.046,0.160);
 
-    vec3 grid1 = grid(st, 5., vec2(20.,0.), vec2(0.0,0.0), 0.3);
-    colour = mix(colour, colourB, grid1);
+    vec3 grid1 = grid(st, 10., vec2(floor(u_time)), 0.3);
+    colour = mix(colour, colourA, grid1);
 
+    vec3 grid2 = grid(st, 5., vec2(floor(u_time)), 0.2);
+    float stripe = step(0.75, fract((st.x) * 50.));
+    vec3 stripeGrid = grid2 * stripe;
+    colour = mix(colour, colourC, stripeGrid);
+
+    vec3 grid3 = grid(st, 20., vec2(floor(u_time)), 0.2);
+    colour = mix(colour, colourB, grid3);
+
+
+
+    st *= 10.;
+    vec2 ipos = floor(st);
+    vec2 fpos = fract(st);
+    float circle1 = circle(st, 0.001);
+    colour = mix(colour, vec3(1.), circle1);
+
+    float skew = (ipos.y+1.) * u_contrast;
+    float skewedRandomValue = random(vec2(pow(ipos.x, skew), pow(ipos.y, skew)));
+
+    if (skewedRandomValue == 0.) {
+        if (random(ipos) > 0.75) {
+            skewedRandomValue = random(ipos);
+        }
+    }
+
+    vec2 tile = truchetPattern(fpos, skewedRandomValue);
+
+
+    float curve1 = circle(tile+vec2(0.5,0.5), 1.25);
+    float curve2 = circle(tile+vec2(0.5,0.5), .75);
+    float pattern = curve1 - curve2;
+    pattern += circle(tile+vec2(0.,-0.5), 0.01);
+    pattern += circle(tile+vec2(-0.5,0.), 0.01);
+      
+    colour = mix(colour, vec3(0.), pattern);
+
+    colour = 1. - colour;
 
     outColor = vec4(colour, 1.0);
 }
@@ -161,18 +213,18 @@ out vec4 outColor;
 
 
 #define BLOOM_BLEND_AMOUNT 64.
-#define BLOOM_INTENSITY 4.
+#define BLOOM_INTENSITY 6.
 
-#define GRAIN_INTENSITY 0.2
+#define GRAIN_INTENSITY 0.15
 
 #define DUST_AMOUNT 0.15
 
 #define SHAKE_INTENSITY 0.002
 
-#define ABBERATION_INTENSITY 0.0015
+#define ABBERATION_INTENSITY 0.001
 
 #define LINES_AMOUNT 150.
-#define LINES_INTENSITY 0.15
+#define LINES_INTENSITY 0.1
 
 
 // --- NOISE AND RANDOM FUNCTIONS ---
@@ -353,7 +405,7 @@ vec4 abberation (vec2 uv, vec4 color) {
 // --- PIXELATION FUNCTION
 
 vec2 pixelate (vec2 uv) {
-    float pixels = 560.;
+    float pixels = 800.;
     float dx = (u_resolution.x/pixels) * (1.0 / pixels);
     float dy = (u_resolution.y/pixels) * (1.0 / pixels);
     uv = vec2(dx * floor(uv.x / dx), dy * floor(uv.y / dy));
@@ -378,7 +430,7 @@ void main() {
 
     uv = shake(uv);
 
-    uv = pixelate(uv);
+    // uv = pixelate(uv);
 
     vec4 color = texture(u_texture, uv);
 
@@ -399,7 +451,7 @@ void main() {
 // for shaders
 const canvasA = document.getElementById('c_artwork');
 
-canvasA.width = 1000; canvasA.height = 500;
+canvasA.width = 600; canvasA.height = 600;
 const gl = canvasA.getContext('webgl2');
 
 // for video parameters
@@ -454,7 +506,7 @@ const initShaders = () => {
 
     const u_timeLocation1 = gl.getUniformLocation(program1, "u_time");
     const u_resolutionLocation1 = gl.getUniformLocation(program1, "u_resolution");
-    const u_contrastALocation1 = gl.getUniformLocation(program1, "contrast");
+    const u_contrastALocation1 = gl.getUniformLocation(program1, "u_contrast");
 
     const program1Buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, program1Buffer);
