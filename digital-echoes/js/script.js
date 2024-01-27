@@ -14,13 +14,27 @@ const canvases3 = document.querySelectorAll('.artwork3');
 const video = document.querySelector('.video');
 const canvasV = document.querySelector('.video_canvas');
 
+let interactive = false;
 let contrast = 0.5;
+let prevFrame = [];
+let motion = 0.2;
 
-const processFrame = (ctx) => {
+const processFrame = (ctx, parameterType) => {
     if (video.paused || video.ended) return;
     ctx.drawImage(video, 0, 0, canvasV.width, canvasV.height);
-    let contrast = getContrast(ctx);
-    return contrast;
+
+    let parameter;
+    if (parameterType === 'contrast') {
+        parameter = getContrast(ctx);
+    }
+    else if (parameterType === 'motion') {
+        const maxPossibleDifference = 255;
+        const maxPixels = canvasV.width * canvasV.height;
+        const adjustedMaxPixels = maxPixels / 1.8;
+        const maxTotalMotion = maxPossibleDifference * adjustedMaxPixels;
+        parameter = getMotion(ctx, maxTotalMotion);
+    }
+    return parameter;
 }
 
 const getContrast = (ctx) => {
@@ -53,6 +67,28 @@ const getContrast = (ctx) => {
 
     // cap contrast at 1
     return Math.min(adjustedContrast, 1);
+}
+const getMotion = (ctx, maxTotalMotion) => {
+
+    const differenceThreshold = 50;
+    let totalMotion = 0;
+
+    const imageData = ctx.getImageData(0, 0, canvasV.width, canvasV.height).data;
+
+    // calculate the average luminance of the image + normalise
+    for (let i = 0; i < imageData.length; i += 4) {
+        const red = imageData[i];
+        // if there is enough difference between the current and previous frame in the red channel, add it to the total
+        if (prevFrame[i] && Math.abs(prevFrame[i] - red) > differenceThreshold) {
+            totalMotion += Math.abs(prevFrame[i] - red);
+        }
+    }
+    motion = Math.min(totalMotion / maxTotalMotion, 1);
+
+    // save the current frame for the next iteration
+    prevFrame = imageData;
+
+    return motion;
 }
 
 const createProgram = (gl, vs, fs) => {
@@ -95,7 +131,7 @@ const initVideo = () => {
     });
 }
 
-const initShaders = (canvas, fs, gl, ctx) => {
+const initShaders = (canvas, fs, gl, ctx, parameter) => {
     // setting up first program for artwork
     const program1 = createProgram(gl, vArtworkSource, fs);
 
@@ -115,6 +151,7 @@ const initShaders = (canvas, fs, gl, ctx) => {
     const u_timeLocation1 = gl.getUniformLocation(program1, "u_time");
     const u_resolutionLocation1 = gl.getUniformLocation(program1, "u_resolution");
     const u_contrastLocation1 = gl.getUniformLocation(program1, "u_contrast");
+    const u_motionLocation1 = gl.getUniformLocation(program1, "u_motion");
 
     const program1Buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, program1Buffer);
@@ -169,20 +206,34 @@ const initShaders = (canvas, fs, gl, ctx) => {
 
     const animate = (time = 0) => {
 
-        // get colours from video every second
-        if (Math.floor(time) % 2000 < 15) {
-            contrast = processFrame(ctx);
-            console.log(contrast);
-            if (contrast === undefined) {
-                contrast = 0.5;
+        if (interactive) {
+            if (parameter === 'contrast') {
+                if (Math.floor(time) % 2000 < 15) {
+                    contrast = processFrame(ctx, parameter);
+                    console.log('contrast: ' + contrast);
+                    if (contrast === undefined) {
+                        contrast = 0.5;
+                    }
+                }
+            }
+            else if (parameter === 'motion') {
+                if (Math.floor(time) % 1000 < 15) {
+                    motion = processFrame(ctx, parameter);
+                    console.log('motion: ' + motion);
+                    if (motion === undefined) {
+                        motion = 0.5;
+                    }
+                }
             }
         }
+
         // render the first program into the texture in the framebuffer
         gl.useProgram(program1);
         // assign uniforms
         gl.uniform1f(u_timeLocation1, time / 1000);
         gl.uniform2f(u_resolutionLocation1, canvas.width, canvas.height);
         gl.uniform1f(u_contrastLocation1, contrast);
+        gl.uniform1f(u_motionLocation1, motion);
         gl.bindVertexArray(program1VAO);
         // bind buffer to draw into it
         gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
@@ -206,18 +257,19 @@ const initShaders = (canvas, fs, gl, ctx) => {
     animate();
 }
 
-const initArtwork = (canvas, fragmentShaderRaw) => {
+const initArtwork = (canvas, fragmentShaderRaw, parameter) => {
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
     const gl = canvas.getContext('webgl2');
     const ctx = canvasV.getContext('2d');
-    initShaders(canvas, fragmentShaderRaw, gl, ctx);
+    initShaders(canvas, fragmentShaderRaw, gl, ctx, parameter);
 };
 
 const init = () => {
+    interactive = document.body.classList.contains('interactive');
     initVideo();
-    canvases1.forEach(canvas => initArtwork(canvas, fArtwork1Source));
-    canvases2.forEach(canvas => initArtwork(canvas, fArtwork2Source));
+    canvases1.forEach(canvas => initArtwork(canvas, fArtwork1Source, 'contrast'));
+    canvases2.forEach(canvas => initArtwork(canvas, fArtwork2Source, 'motion'));
     canvases3.forEach(canvas => initArtwork(canvas, fArtwork3Source));
 }
 
