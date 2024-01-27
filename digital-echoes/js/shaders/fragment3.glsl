@@ -2,7 +2,7 @@
 
 precision highp float;
 
-uniform vec3 u_resolution;
+uniform vec2 u_resolution;
 uniform float u_time;
 
 out vec4 outColor;

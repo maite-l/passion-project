@@ -3,8 +3,8 @@
 
 .introduction {
     display: grid;
-    align-items: end;
-    grid-template-columns: 1.4fr 1fr;
+    align-items: center;
+    grid-template-columns: 1.2fr 1fr;
     width: 80vw;
     max-width: 70rem;
     padding-block-start: 10vh;
@@ -19,7 +19,7 @@
 }
 
 .introduction__title--title {
-    font-size: 5.5rem;
+    font-size: 5.8rem;
     font-weight: 700;
 }
 
@@ -55,16 +55,11 @@
     animation: scroll 40s linear infinite;
     animation-direction: reverse;
 }       
-.overview__artwork {
+canvas {
     width: 33vw;
     height: 45vh;
     object-fit: cover;
     object-position: center;
-}
-
-canvas {
-    width: 33vw;
-    height: 45vh;
 }
 
 

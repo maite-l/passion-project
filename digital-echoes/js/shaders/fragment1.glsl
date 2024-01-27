@@ -2,13 +2,17 @@
 
 precision highp float;
 
-uniform vec3 u_resolution;
-uniform float u_time;
-
 out vec4 outColor;
 
+uniform float u_time;
+uniform vec2 u_resolution;
+uniform float u_contrast;
 
-// Some useful functions
+float random(in vec2 _st) {
+    return fract(sin(dot(_st.xy, vec2(12.9898f, 78.233f))) *
+        43758.5453123f);
+}
+
 vec3 mod289(vec3 x) {
     return x - floor(x * (1.0f / 289.0f)) * 289.0f;
 }
@@ -82,25 +86,95 @@ float snoise(vec2 v) {
     return 130.0f * dot(m, g);
 }
 
+vec3 grid(vec2 st, float size, vec2 offset, float threshold) {
+    st *= size;
+    st += offset;
+    vec2 ipos = floor(st);
+    vec2 fpos = fract(st);
+    vec3 grid = vec3(1.f - step(snoise(ipos), threshold));
+    return grid;
+}
+
 float circle(in vec2 _st, in float _radius) {
     vec2 dist = _st - vec2(0.5f);
     return 1.f - smoothstep(_radius - (_radius * 0.01f), _radius + (_radius * 0.01f), dot(dist, dist) * 4.0f);
 }
 
+vec2 truchetPattern(in vec2 _st, in float _index) {
+    _index = fract(((_index - 0.5f) * 2.0f));
+    if(_index > 0.75f) {
+        _st = vec2(1.0f) - _st;
+    } else if(_index > 0.5f) {
+        _st = vec2(1.0f - _st.x, _st.y);
+    } else if(_index > 0.25f) {
+        _st = 1.0f - vec2(1.0f - _st.x, _st.y);
+    }
+    return _st;
+}
+
+float sdCircle(vec2 p, float r) {
+    return length(p) - r;
+}
+
+#define PI 3.1415926535897932384626433832795
+
 void main() {
+
     vec2 st = gl_FragCoord.xy / u_resolution.xy;
-    // st.x -= 0.25f;
     st.x *= u_resolution.x / u_resolution.y;
 
-    vec3 color = vec3(0.f);
+    vec3 colour = vec3(1.f, 1.f, 1.f);
 
-    vec2 pos = vec2(st * 25.f);
-    float row = step(1.0f, mod(pos.y, 2.0f));
-    pos.x += (row * (0.5f));
+    vec3 colourA = 1.f - vec3(0.287f, 0.372f, 0.540f);
+    vec3 colourB = 1.f - vec3(0.066f, 0.044f, 0.355f);
+    vec3 colourC = 1.f - vec3(0.590f, 0.046f, 0.160f);
 
-    vec2 integer = (floor(pos));
-    vec2 fractional = fract(pos);
-    color = vec3(circle(fractional, (smoothstep(0.0f, 0.99f, snoise(integer / 10.f + u_time / 5.f) * 0.5f + 0.5f))));
+    vec3 grid1 = grid(st, 10.f, vec2(floor(u_time / 4.f)), 0.3f);
+    colour = mix(colour, colourA, grid1);
 
-    outColor = vec4(color, 1.0f);
+    vec3 grid2 = grid(st, 5.f, vec2(floor(u_time / 4.f)), 0.2f);
+    float stripe = step(0.75f, fract((st.x) * 50.f));
+    vec3 stripeGrid = grid2 * stripe;
+    colour = mix(colour, colourC, stripeGrid);
+
+    vec3 grid3 = grid(st, 20.f, vec2(floor(u_time / 4.f)), 0.2f);
+    colour = mix(colour, colourB, grid3);
+
+    st *= 10.f;
+    vec2 ipos = floor(st);
+    vec2 fpos = fract(st);
+    float circle1 = circle(st, 0.001f);
+    colour = mix(colour, vec3(1.f), circle1);
+
+    float skew = (ipos.y + 1.f) * u_contrast;
+    float skewedRandomValue = random(vec2(pow(ipos.x, skew), pow(ipos.y, skew)));
+
+    if(skewedRandomValue == 0.f) {
+        if(random(ipos) > 0.75f) {
+            skewedRandomValue = random(ipos);
+        }
+    }
+
+    vec2 tile = truchetPattern(fpos, skewedRandomValue);
+
+    float curve1 = circle(tile + vec2(0.5f, 0.5f), 1.25f);
+    float curve2 = circle(tile + vec2(0.5f, 0.5f), .75f);
+    float pattern = curve1 - curve2;
+    pattern += circle(tile + vec2(0.f, -0.5f), 0.01f);
+    pattern += circle(tile + vec2(-0.5f, 0.f), 0.01f);
+
+    float animatedSize = sin((u_time - 1.f) / 2.f * PI) * 0.9f;
+    float scaledAnimatedSize = abs(animatedSize) * 2.0f - 1.0f;
+
+    float mask = circle(tile + vec2(0.2f, 0.2f), max(0.0f, scaledAnimatedSize));
+    mask += circle(tile + vec2(-0.3f, -0.7f), max(0.0f, scaledAnimatedSize));
+    mask += circle(tile + vec2(-0.7f, 0.3f), max(0.0f, scaledAnimatedSize));
+
+    pattern *= mask;
+
+    colour = mix(colour, vec3(0.f), pattern);
+
+    colour = 1.f - colour;
+
+    outColor = vec4(colour, 1.0f);
 }

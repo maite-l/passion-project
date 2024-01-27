@@ -181,13 +181,12 @@ void main() {
     pattern += circle(tile+vec2(0.,-0.5), 0.01);
     pattern += circle(tile+vec2(-0.5,0.), 0.01);
 
-float timeFactor = sin((u_time - 1.) / 2. * PI) * 0.9;
-float scaledTimeFactor = abs(timeFactor) * 2.0 - 1.0;
+    float animatedSize = sin((u_time - 1.) / 2. * PI) * 0.9;
+    float scaledAnimatedSize = abs(animatedSize) * 2.0 - 1.0;
 
-float mask = circle(tile + vec2(0.2, 0.2), max(0.0, scaledTimeFactor));
-mask += circle(tile + vec2(-0.3, -0.7), max(0.0, scaledTimeFactor));
-mask += circle(tile + vec2(-0.7, 0.3), max(0.0, scaledTimeFactor));
-
+    float mask = circle(tile + vec2(0.2, 0.2), max(0.0, scaledAnimatedSize));
+    mask += circle(tile + vec2(-0.3, -0.7), max(0.0, scaledAnimatedSize));
+    mask += circle(tile + vec2(-0.7, 0.3), max(0.0, scaledAnimatedSize));
 
     pattern *= mask;
       
@@ -473,7 +472,6 @@ const ctx = canvasV.getContext('2d');
 const resultDiv = document.getElementById('result');
 
 let contrast = 0.5;
-let lastParameterUpdate = 0;
 
 const processFrame = () => {
     if (video.paused || video.ended) return;
