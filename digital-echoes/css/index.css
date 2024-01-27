@@ -4,13 +4,13 @@
 .introduction {
     display: grid;
     align-items: center;
-    grid-template-columns: 1.2fr 1fr;
+    grid-template-columns: 1.35fr 1fr;
     width: 80vw;
     max-width: 70rem;
     padding-block-start: 10vh;
     padding-block-end: 14vh;
     margin: auto;
-    gap: 6.5rem;
+    gap: 1.5rem;
 }
 
 .introduction__title {
@@ -21,6 +21,7 @@
 .introduction__title--title {
     font-size: 5.8rem;
     font-weight: 700;
+    line-height: 1;
 }
 
 .introduction__title--subtitle {
@@ -30,6 +31,9 @@
 .introduction__explanation {
     font-family: 'elza', sans-serif;
     font-weight: 300;
+}
+.introduction__explanation span {
+    font-weight: 600;
 }
 
 

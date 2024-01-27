@@ -9,19 +9,21 @@
 
 a {
   text-decoration: none;
-  color: #000;
+  color: #ffffff;
 }
 
 
 body {
   font-family: 'deimos', monospace;
-  font-size: 1.2rem;
-  line-height: 1.2;
+  font-size: 1.1rem;
+  line-height: 1.5;
+  background-color: #141212;
+  color: #ffffff;
 }
 
 header {
-  background-color: #fff;
-  background-image: linear-gradient(to right, #000 20%, rgba(255, 255, 255, 0) 0%);
+  background-color: #141212;
+  background-image: linear-gradient(to right, #ffffff 20%, rgba(255, 255, 255, 0) 0%);
   background-position: bottom 10px left 0;
   background-size: 10px 2px;
   background-repeat: repeat-x;
@@ -31,4 +33,12 @@ header {
   align-items: center;
   justify-content: center;
   font-weight: 800;
+}
+
+video {
+  display: none;
+}
+
+.video_canvas {
+  display: none;
 }
