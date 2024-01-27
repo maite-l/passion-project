@@ -26,7 +26,7 @@ mat2 rotate2d(float _angle){
     return mat2(cos(_angle),-sin(_angle),
                 sin(_angle),cos(_angle));
 }
-mat2 scale(vec2 _scale){
+mat2 scale2d(vec2 _scale){
     return mat2(_scale.x,0.0,
                 0.0,_scale.y);
 }
@@ -142,11 +142,41 @@ float box3n4Scale(float time) {
     if (t < 5.5) {
         return result = 300.0;
     } else if (t < 6.5)  {
-        return result = mix(3.0, 1.0, (t - 4.5));
+        return result = mix(2.0, 1.0, (t - 4.5));
     } 
     return result;
 }
 
+vec3 stripedBox(vec2 st, float rotation, vec2 size ) {
+    vec2 stBox = st - vec2(0.5);
+    stBox = rotate2d( rotation ) * stBox;
+    stBox += vec2(0.5);
+
+    float stripesBox = step(stripesWidth(u_time), fract((stBox.x) * 10.));
+
+    vec3 box = vec3(box(stBox, size));
+    box *= vec3(stripesBox);
+    return box;
+}
+
+vec2 rotate(vec2 st, float angle) {
+    st -= vec2(0.5);
+    st = rotate2d( angle) * st;
+    st += vec2(0.5);
+    return st;
+}
+vec2 scale(vec2 st, vec2 scale) {
+    st -= vec2(0.5);
+    st = scale2d( scale) * st;
+    st += vec2(0.5);
+    return st;
+}
+
+float random (vec2 st) {
+    return fract(sin(dot(st.xy,
+                         vec2(12.9898,78.233)))*
+        43758.5453123);
+}
 
 
 
@@ -158,54 +188,60 @@ void main() {
     vec3 colour = vec3(0.);
 
     st *= 6.;
+
+    float row = step(1.0, mod(st.y, 2.0));
+    st.x += (row * (0.5));
+
+    vec2 index = floor(st);
     st = fract(st);
 
+    float randomXOffset = (random(index) * 2. - 1.)/10.;
+    float randomYOffset = (random(index+1.) * 2. - 1.)/10.;
+    st += vec2(randomXOffset, randomYOffset);
 
-    st -= vec2(0.5);
-    st = scale( vec2(stScale(u_time)) ) * st;
-    st = rotate2d( sin(u_time)*PI/2.) * st;
-    st += vec2(0.5);
+    float randomTimeOffset = (random(index+2.) * 2. - 1.)/10.;
+    float time = u_time + randomTimeOffset;
 
-    vec2 stBox1 = st - vec2(0.5);
-    stBox1 = rotate2d( PI/4.) * stBox1;
-    stBox1 += vec2(0.5);
-    float stripesBox1 = step(stripesWidth(u_time), fract((stBox1.x) * 10.));
+    st = rotate(st, time*PI/2.);
+    st = scale(st, vec2(0.8) );
+    st = scale(st, vec2(stScale(time)) );
 
-    vec3 box1 = vec3(box(stBox1, vec2(0.6, 0.6)));
-    box1 *= vec3(stripesBox1);
 
     vec2 stMask1 = st - vec2(0.5);
-    stMask1 = rotate2d( PI/rotationBox2(u_time)) * stMask1;
+    stMask1 = rotate2d( PI/rotationBox2(time)) * stMask1;
     stMask1 += vec2(0.5);
-	vec3 mask1 = vec3(box(stMask1, vec2(mask1Size(u_time))));
+	vec3 mask1 = vec3(box(stMask1, vec2(mask1Size(time))));
+    vec3 stripedBox1 = stripedBox(st, PI/4., vec2(0.6));
 
-    colour += box1*mask1;
+    colour += stripedBox1*mask1;
 
 
     vec2 stBox2 = st - vec2(0.5);
-    stBox2 = rotate2d( PI/rotationBox2(u_time)) * stBox2;
+    stBox2 = rotate2d( PI/rotationBox2(time)) * stBox2;
     stBox2 += vec2(0.5);
-    float stripesBox2 = step(stripesWidth(u_time), fract((stBox2.x) * 10.));
+    float stripesBox2 = step(stripesWidth(time), fract((stBox2.x) * 10.));
 
-    vec3 box2 = vec3(box(stBox2, vec2(float(widthBox2(u_time)), heightBox2(u_time))));
+    vec3 box2 = vec3(box(stBox2, vec2(float(widthBox2(time)), heightBox2(time))));
     box2 *= vec3(stripesBox2);
 
     vec2 stMask2 = st - vec2(0.5);
-    stMask2 = rotate2d( PI/rotationBox2(u_time)) * stMask2;
+    stMask2 = rotate2d( PI/rotationBox2(time)) * stMask2;
     stMask2 += vec2(0.5);
 	vec3 mask2 = vec3(box(stMask2, vec2(float(0.6), 0.6)));
 
-    colour += box2*mask2;
+    vec3 stripedBox2 = stripedBox(st, PI/rotationBox2(time), vec2(widthBox2(time), heightBox2(time)));
 
-    vec2 stBox3 = st - vec2(0.5);
-    stBox3 = rotate2d( PI/4.) * stBox3;
-    stBox3 = scale( vec2(box3n4Scale(u_time)) ) * stBox3;
-    stBox3 += vec2(0.5);
+    colour += stripedBox2*mask2;
+
+
+
+    vec2 stBox3 = rotate(st, PI/4.);
+    stBox3 = scale(stBox3, vec2(box3n4Scale(time)) );
     vec3 box3 = vec3(box(stBox3, vec2(0.5)));
-    vec2 stBox4 = st - vec2(0.5);
-    stBox4 = scale( vec2(box3n4Scale(u_time)) ) * stBox4;
-    stBox4 += vec2(0.5);
+
+    vec2 stBox4 = scale(st, vec2(box3n4Scale(time)) );
     vec3 box4 = vec3(box(stBox4, vec2(0.5)));
+
     vec3 box3n4 = box3 + box4;
     colour = mix(colour, vec3(0.), box3n4);
 
@@ -592,7 +628,7 @@ const initShaders = () => {
     const animate = (time = 0) => {
 
         // get colours from video every second
-        if (Math.floor(time) % 2000 < 15) {
+        if (Math.floor(time) % 1000 < 15) {
             motion = processFrame();
             console.log(motion);
             if (motion === undefined) {
