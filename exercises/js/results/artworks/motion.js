@@ -20,7 +20,7 @@ uniform vec2 u_resolution;
 uniform float u_motion;
 
 #define PI 3.14159265359
-#define ANIMATION_LENGTH 7.
+#define ANIMATION_LENGTH 6.
 
 mat2 rotate2d(float _angle){
     return mat2(cos(_angle),-sin(_angle),
@@ -141,9 +141,9 @@ float box3n4Scale(float time) {
     float result;
     if (t < 5.5) {
         return result = 300.0;
-    } else {
-        return result = mix(50.0, 5.0, (t - 5.));
-    }
+    } else if (t < 6.5)  {
+        return result = mix(3.0, 1.0, (t - 4.5));
+    } 
     return result;
 }
 
@@ -157,7 +157,7 @@ void main() {
 
     vec3 colour = vec3(0.);
 
-    st *= 10.;
+    st *= 6.;
     st = fract(st);
 
 
@@ -208,9 +208,6 @@ void main() {
     vec3 box4 = vec3(box(stBox4, vec2(0.5)));
     vec3 box3n4 = box3 + box4;
     colour = mix(colour, vec3(0.), box3n4);
-
-
-
 
     outColor = vec4(colour, 1.0);
 }
