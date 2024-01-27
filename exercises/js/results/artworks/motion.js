@@ -50,101 +50,85 @@ float easeInOutQuad(float t) {
 
 float widthBox2(float time) {
     float t = mod(time, ANIMATION_LENGTH);
-    float result;
     if (t < 1.0) {
-        return result = mix(0.0, 0.05, easeInOutQuad(t));
+        return mix(0.0, 0.05, easeInOutQuad(t));
     } else if (t < 2.0) {
-        return result = mix(0.05, 0.9, easeInOutQuad(t - 1.0));
+        return mix(0.05, 0.9, easeInOutQuad(t - 1.0));
     } else {
-        return result = 0.9;
+        return 0.9;
     }
-    return result;
 }
 
 float heightBox2(float time) {
     float t = mod(time, ANIMATION_LENGTH);
-    float result;
     if (t < 1.0) {
-        return result = mix(0.0, 0.015, easeInOutQuad(t));
+        return mix(0.0, 0.015, easeInOutQuad(t));
     } else if (t < 2.0) {
-        return result = 0.015;
+        return 0.015;
     } else if (t < 3.0) {
-        return result = mix(0.015, 0.9, easeInOutQuad(t - 2.0));
+        return mix(0.015, 0.9, easeInOutQuad(t - 2.0));
     } else {
-        return result = 0.9;
+        return 0.9;
     }
-    return result;
 }
 
 float rotationBox2(float time) {
     float t = mod(time, ANIMATION_LENGTH);
-    float result;
     if (t < 3.0) {
-        return result = 4.0;
+        return 4.0;
     } else if (t < 4.0) {
-        return result = mix(4.0, 2.0, easeInOutQuad(t - 3.0));
+        return mix(4.0, 2.0, easeInOutQuad(t - 3.0));
     } else {
-        return result = 2.0;
+        return 2.0;
     }
-    return result;
 }
 
 float stripesWidth(float time) {
     float t = mod(time, ANIMATION_LENGTH);
-    float result;
     if (t < 4.0) {
-        return result = 0.75;
+        return 0.75;
     } else if (t < 5.0) {
-        return result = mix(0.75, 0.0, (t - 4.0));
+        return mix(0.75, 0.0, (t - 4.0));
     } else {
-        return result = 0.0;
+        return 0.0;
     }
-    return result;
 }
 
 float scaleSt(float time) {
     float t = mod(time, ANIMATION_LENGTH);
-    float result;
     if (t < 4.0) {
-        return result = 0.75;
+        return 0.75;
     } else if (t < 5.0) {
-        return result = mix(0.75, 0.0, (t - 4.0));
+        return mix(0.75, 0.0, (t - 4.0));
     } else {
-        return result = 0.0;
+        return 0.0;
     }
-    return result;
 }
 float mask1Size(float time) {
     float t = mod(time, ANIMATION_LENGTH);
-    float result;
     if (t < 3.0) {
-        return result = 0.0;
+        return 0.0;
     } else {
-        return result = 1.0;
+        return 1.0;
     }
-    return result;
 }
 
 float stScale(float time) {
      float t = mod(time, ANIMATION_LENGTH);
-    float result;
     if (t < 6.0) {
-        return result = 1.0;
+        return 1.0;
     } else {
-        return result = mix(300.0, 1.0, easeInOutQuad(t - 5.0));
+        return mix(300.0, 1.0, easeInOutQuad(t - 5.0));
     }
-    return result;
 }
 
 float box3n4Scale(float time) {
      float t = mod(time, ANIMATION_LENGTH);
-    float result;
     if (t < 5.5) {
-        return result = 300.0;
+        return 300.0;
     } else if (t < 6.5)  {
-        return result = mix(2.0, 1.0, (t - 4.5));
+        return mix(2.0, 1.0, (t - 4.5));
     } 
-    return result;
 }
 
 vec3 stripedBox(vec2 st, float rotation, vec2 size ) {
@@ -178,6 +162,8 @@ float random (vec2 st) {
         43758.5453123);
 }
 
+vec3 colourA = vec3(0.05, 0.2, 0.2);
+vec3 colourB = vec3(0.95, 0., 0.);
 
 
 void main() {
@@ -185,9 +171,10 @@ void main() {
     vec2 st = gl_FragCoord.xy/u_resolution.xy;
     st.x *= u_resolution.x / u_resolution.y;
 
-    vec3 colour = vec3(0.);
+    vec3 colour = colourA;
 
-    st *= 6.;
+    float zoom = floor(u_motion * 10. + 3.);
+    st *= zoom;
 
     float row = step(1.0, mod(st.y, 2.0));
     st.x += (row * (0.5));
@@ -206,33 +193,35 @@ void main() {
     st = scale(st, vec2(0.8) );
     st = scale(st, vec2(stScale(time)) );
 
-
-    vec2 stMask1 = st - vec2(0.5);
-    stMask1 = rotate2d( PI/rotationBox2(time)) * stMask1;
-    stMask1 += vec2(0.5);
+    vec2 stMask1 = rotate(st, PI/rotationBox2(time));
 	vec3 mask1 = vec3(box(stMask1, vec2(mask1Size(time))));
+
     vec3 stripedBox1 = stripedBox(st, PI/4., vec2(0.6));
 
-    colour += stripedBox1*mask1;
+    vec3 maskedStripedBox1 = stripedBox1*mask1;
+
+    vec3 shape = maskedStripedBox1;
 
 
-    vec2 stBox2 = st - vec2(0.5);
-    stBox2 = rotate2d( PI/rotationBox2(time)) * stBox2;
-    stBox2 += vec2(0.5);
+
+
+    vec2 stBox2 = rotate(st,  PI/rotationBox2(time));
     float stripesBox2 = step(stripesWidth(time), fract((stBox2.x) * 10.));
 
     vec3 box2 = vec3(box(stBox2, vec2(float(widthBox2(time)), heightBox2(time))));
     box2 *= vec3(stripesBox2);
 
-    vec2 stMask2 = st - vec2(0.5);
-    stMask2 = rotate2d( PI/rotationBox2(time)) * stMask2;
-    stMask2 += vec2(0.5);
+    vec2 stMask2 = rotate(st, PI/rotationBox2(time));
 	vec3 mask2 = vec3(box(stMask2, vec2(float(0.6), 0.6)));
 
     vec3 stripedBox2 = stripedBox(st, PI/rotationBox2(time), vec2(widthBox2(time), heightBox2(time)));
 
-    colour += stripedBox2*mask2;
+    vec3 maskedStripedBox2 = stripedBox2*mask2;
 
+    shape += maskedStripedBox2;
+    shape *= colourB;
+
+    colour += shape;
 
 
     vec2 stBox3 = rotate(st, PI/4.);
@@ -243,7 +232,7 @@ void main() {
     vec3 box4 = vec3(box(stBox4, vec2(0.5)));
 
     vec3 box3n4 = box3 + box4;
-    colour = mix(colour, vec3(0.), box3n4);
+    colour = mix(colour, colourA, box3n4);
 
     outColor = vec4(colour, 1.0);
 }
