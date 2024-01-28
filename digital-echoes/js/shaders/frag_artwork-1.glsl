@@ -123,11 +123,12 @@ void main() {
     vec2 st = gl_FragCoord.xy / u_resolution.xy;
     st.x *= u_resolution.x / u_resolution.y;
 
-    vec3 colour = vec3(1.f, 1.f, 1.f);
+    vec3 colour = 1.f - vec3(0.05f, 0.05f, 0.09f);
 
-    vec3 colourA = 1.f - vec3(0.287f, 0.372f, 0.540f);
-    vec3 colourB = 1.f - vec3(0.066f, 0.044f, 0.355f);
-    vec3 colourC = 1.f - vec3(0.590f, 0.046f, 0.160f);
+    vec3 colourA = 1.f - vec3(0.16f, 0.0f, 0.03f);
+    vec3 colourB = 1.f - vec3(0.25f, 0.04f, 0.08f);
+    vec3 colourC = 1.f - vec3(0.28f, 0.07f, 0.11f);
+    vec3 colourD = 1.f - vec3(1.0f, 0.77f, 0.75f);
 
     vec3 grid1 = grid(st, 10.f, vec2(floor(u_time / 4.f)), 0.3f);
     colour = mix(colour, colourA, grid1);
@@ -172,7 +173,7 @@ void main() {
 
     pattern *= mask;
 
-    colour = mix(colour, vec3(0.f), pattern);
+    colour = mix(colour, colourD, pattern);
 
     colour = 1.f - colour;
 
