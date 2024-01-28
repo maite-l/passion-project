@@ -124,30 +124,83 @@ float stripedPolygon( vec2 st, int sides, float size, vec2 offset, int stripesAm
     return shape *= 1.0-smoothstep(size,size+0.01,d);
 }
 
+float random (float x) {
+    return fract(sin(x)*10000.0);
+}
+float noise(float st) {
+    return mix(random(floor(st)), random(floor(st) + 1.0), smoothstep(0.,1.,fract(st)));
+}
+
 
 void main() {
 
     vec2 st = gl_FragCoord.xy/u_resolution.xy;
 
-    vec3 colour = vec3(0.);
+    vec3 colour = vec3(0.0);
 
-    vec3 gradient1 = gradient(colourA, colourB, st, 2., vec2(0.840,0.750));
-    float shape1 = stripedPolygon(st, 4, 0.5, vec2(0.5,0.5), 7, 0.5);
-    vec3 gradientShape1 = vec3(shape1) * gradient1;
-    // colour += (shape1/4.);
-    colour += gradientShape1/2.;
+    // vec3 stripes = vec3(0.0);
+    // for (int i = 10; i <= 12; ++i) {
+    //     vec2 offsetShape = (vec2(random(floor(u_time)/2. + float(i)), random(floor(u_time)/2. + float(i) + 1.)) - 0.5);
+    //     vec2 offsetGradient = (vec2(noise((u_time) * 1.5 - 1.), noise((u_time) * 1.5 - 2.)));
 
-    vec3 gradient2 = gradient(colourB, colourC, st, 2., vec2(0.840,0.750));
-    float shape2 = stripedPolygon(st, 3, 0.5, vec2(0.,0.25), 7, 0.5);
-    vec3 gradientShape2 = vec3(shape2) * gradient2;
-    // colour += (shape2/4.);
-    colour += gradientShape2/2.;
+    //     vec3 gradient = gradient(colourA, vec3(0.,0.2,0.), st, 2., offsetGradient);
+    //     float shape = stripedPolygon(st, 2, 0.2, offsetShape, 8, 0.8);
 
-    vec3 gradient3 = gradient(colourC, colourA, st, 2., vec2(0.840,0.750));
-    float shape3 = stripedPolygon(st, 6, 0.5, vec2(-0.5,-0.5), 7, 0.5);
-    vec3 gradientShape3 = vec3(shape3) * gradient3;
-    // colour += (shape3/4.);
-    colour += gradientShape3/2.;
+    //     stripes += (vec3(shape) * gradient) / 2.;
+    // }
+    // colour += mix(colour, stripes, 0.5);
+
+
+    vec3 squares = vec3(0.0);
+    for (int i = 1; i <= 2; ++i) {
+        vec2 offsetShape = (vec2(random(floor(u_time)/2. + float(i)), random(floor(u_time)/2. + float(i) + 1.)) - 0.5);
+        vec2 offsetGradient = (vec2(noise((u_time) * 1.5 - 1.), noise((u_time) * 1.5 - 2.)));
+
+        vec3 gradient = gradient(colourA, vec3(0.2,0.,0.), st, 2., offsetGradient);
+        float shape = stripedPolygon(st, 4, 0.3, offsetShape, 8, 0.4);
+        float background = polygon(st, 4, 0.3, offsetShape);
+
+        squares += polygon(st, 4, 0.3, offsetShape) / 5. * colourB;
+        squares += (shape / 5.);
+        squares += (vec3(shape) * gradient) / 2.;
+    }
+    colour += mix(colour, squares, 1.);
+
+
+    vec3 triangles = vec3(0.0);
+    for (int i = 20; i <= 21; ++i) {
+        vec2 offsetShape = (vec2(random(floor(u_time)/2. + float(i)), random(floor(u_time)/2. + float(i) + 1.)) - 0.5);
+        vec2 offsetGradient = (vec2(noise((u_time) * 1.5 - 1.), noise((u_time) * 1.5 - 2.)));
+
+        vec3 gradient = gradient(colourC, vec3(0.,0.,0.2), st, 2., offsetGradient);
+        float shape = stripedPolygon(st, 3, 0.15, offsetShape, 12, 0.6);
+        float background = polygon(st, 3, 0.15, offsetShape);
+
+        triangles += polygon(st, 3, 0.15, offsetShape) / 5. * colourC;
+        triangles += (shape / 5.);
+        triangles += (vec3(shape) * gradient) / 2.;
+    }
+    colour += mix(colour, triangles, 1.);
+
+
+
+
+
+    // vec2 offset2 = (vec2(noise(floor(u_time)/2.+1.), noise(floor(u_time)/2.+2.))-0.5);
+    // vec3 gradient2 = gradient(colourB, colourC, st, 2., vec2(0.840,0.750)-offset2);
+    // float shape2 = stripedPolygon(st, 3, 0.2, offset2, 7, 0.5);
+    // vec3 gradientShape2 = vec3(shape2) * gradient2;
+    // colour += polygon(st, 3, 0.2, offset2)/5.*colourB;
+    // colour += (shape2/5.);
+    // colour += gradientShape2/2.;
+
+    // vec2 offset3 = (vec2(noise(floor(u_time)/2.), noise(floor(u_time)/2.+3.))-0.5);
+    // vec3 gradient3 = gradient(colourC, colourA, st, 2., vec2(2.840,1.)-offset3);
+    // float shape3 = stripedPolygon(st, 6, 0.3, offset3, 8, 0.4);
+    // vec3 gradientShape3 = vec3(shape3) * gradient3;
+    // colour += polygon(st, 6, 0.3, offset3)/5.*colourC;
+    // colour += (shape3/5.);
+    // colour += gradientShape3/2.;
 
     outColor += vec4(colour, 1.0);
 }
@@ -625,7 +678,7 @@ const parseRGB = (rgbString) => {
 
 const getColours = () => {
     const colourAmount = 3;
-    const differenceThreshold = 80;
+    const differenceThreshold = 100;
 
     // get pixel data from the canvas
     const imageData = ctx.getImageData(0, 0, canvasV.width, canvasV.height).data;
@@ -675,19 +728,6 @@ const getColours = () => {
             newColourPalette.push(currentColour);
         }
     }
-
-    const resultDiv = document.getElementById('result');
-    resultDiv.innerHTML = '';
-    newColourPalette.forEach(colour => {
-        const colourDiv = document.createElement('div');
-        colourDiv.style.width = '2rem';
-        colourDiv.style.height = '2rem';
-        colourDiv.style.display = 'inline-block';
-        colourDiv.style.backgroundColor = colour;
-        resultDiv.appendChild(colourDiv);
-    });
-
-    console.log(newColourPalette);
 
     return newColourPalette.map(colour => parseRGB(colour).map(c => c / 255));
 }
