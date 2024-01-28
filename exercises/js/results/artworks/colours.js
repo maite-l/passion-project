@@ -134,17 +134,20 @@ void main() {
     vec3 gradient1 = gradient(colourA, colourB, st, 2., vec2(0.840,0.750));
     float shape1 = stripedPolygon(st, 4, 0.5, vec2(0.5,0.5), 7, 0.5);
     vec3 gradientShape1 = vec3(shape1) * gradient1;
-    colour += gradientShape1/1.5;
+    // colour += (shape1/4.);
+    colour += gradientShape1/2.;
 
     vec3 gradient2 = gradient(colourB, colourC, st, 2., vec2(0.840,0.750));
     float shape2 = stripedPolygon(st, 3, 0.5, vec2(0.,0.25), 7, 0.5);
-     vec3 gradientShape2 = vec3(shape2) * gradient2;
-    colour += gradientShape2/1.5;
+    vec3 gradientShape2 = vec3(shape2) * gradient2;
+    // colour += (shape2/4.);
+    colour += gradientShape2/2.;
 
     vec3 gradient3 = gradient(colourC, colourA, st, 2., vec2(0.840,0.750));
     float shape3 = stripedPolygon(st, 6, 0.5, vec2(-0.5,-0.5), 7, 0.5);
     vec3 gradientShape3 = vec3(shape3) * gradient3;
-    colour += gradientShape3/1.5;
+    // colour += (shape3/4.);
+    colour += gradientShape3/2.;
 
     outColor += vec4(colour, 1.0);
 }
@@ -528,15 +531,28 @@ const initShaders = () => {
         // get colours from video every second
         if (Math.floor(time) % 2000 < 15) {
             colourPalette = processFrame();
-            console.log(colourPalette);
+
             if (colourPalette === undefined) {
                 colourPalette = [[0, 0.5, 0], [0, 0, 0.5], [0.5, 0, 0]];
             }
             for (let i = 0; i < 3; i++) {
                 if (colourPalette[i] === undefined) {
-                    colourPalette[i] = [i/3., i/3., i/3.];
+                    switch (i) {
+                        case 0:
+                            colourPalette[i] = [(i + 1) / 3, 0, 0];
+                            break;
+                        case 1:
+                            colourPalette[i] = [0, (i + 1) / 3, 0];
+                            break;
+                        case 2:
+                            colourPalette[i] = [0, 0, (i + 1) / 3];
+                            break;
+                        default:
+                            break;
+                    }
                 }
             }
+            console.log(colourPalette);
         }
         // render the first program into the texture in the framebuffer
         gl.useProgram(program1);
@@ -570,6 +586,30 @@ const initShaders = () => {
 }
 
 
+// https://stackoverflow.com/questions/13806483/increase-or-decrease-color-saturation
+const saturate = (colour, value) => {
+
+    for (var i = 0; i > 3; i += 1) {
+        var r = colour[i];
+        var g = colour[i + 1];
+        var b = colour[i + 2];
+        var gray = 0.2989 * r + 0.5870 * g + 0.1140 * b; //weights from CCIR 601 spec
+        colour[i] = -gray * value + colour[i] * (1 + value);
+        colour[i + 1] = -gray * value + colour[i + 1] * (1 + value);
+        colour[i + 2] = -gray * value + colour[i + 2] * (1 + value);
+        //normalize over- and under-saturated values
+        if (colour[i] > 255) colour[i] = 255;
+        if (colour[i + 1] > 255) colour[i] = 255;
+        if (colour[i + 2] > 255) colour[i] = 255;
+        if (colour[i] < 0) colour[i] = 0;
+        if (colour[i + 1] < 0) colour[i] = 0;
+        if (colour[i + 2] < 0) colour[i] = 0;
+    }
+
+    colour = 'rgb(' + colour[0] + ',' + colour[1] + ',' + colour[2] + ')';
+    return colour;
+};
+
 
 const colourDifference = (colour1, colour2) => {
     // Euclidean distance between two RGB colours https://en.wikipedia.org/wiki/Color_difference
@@ -585,7 +625,7 @@ const parseRGB = (rgbString) => {
 
 const getColours = () => {
     const colourAmount = 3;
-    const differenceThreshold = 120;
+    const differenceThreshold = 80;
 
     // get pixel data from the canvas
     const imageData = ctx.getImageData(0, 0, canvasV.width, canvasV.height).data;
@@ -608,7 +648,20 @@ const getColours = () => {
     // get the most common colours that are different enough and not too close to black
     let newColourPalette = [];
     for (let i = 0; i < sortedColours.length; i++) {
-        const currentColour = sortedColours[i];
+        let currentColour = sortedColours[i];
+
+        //saturate the colour
+        currentColour = saturate(parseRGB(currentColour), 0.7);
+
+        let currentParsedColour = parseRGB(currentColour);
+        let isWhite = false; let isBlack = false;
+        if (currentParsedColour[0] > 240 || currentParsedColour[1] > 240 || currentParsedColour[2] > 240) {
+            isWhite = true;
+        }
+        if (currentParsedColour[0] < 60 || currentParsedColour[1] < 60 || currentParsedColour[2] < 60) {
+            isBlack = true;
+        }
+
 
         const include = newColourPalette.every(paletteColour => {
             const difference = colourDifference(
@@ -618,10 +671,24 @@ const getColours = () => {
             return difference >= differenceThreshold;
         });
 
-        if (include && newColourPalette.length < colourAmount) {
+        if (include && newColourPalette.length < colourAmount && !isWhite && !isBlack) {
             newColourPalette.push(currentColour);
         }
     }
+
+    const resultDiv = document.getElementById('result');
+    resultDiv.innerHTML = '';
+    newColourPalette.forEach(colour => {
+        const colourDiv = document.createElement('div');
+        colourDiv.style.width = '2rem';
+        colourDiv.style.height = '2rem';
+        colourDiv.style.display = 'inline-block';
+        colourDiv.style.backgroundColor = colour;
+        resultDiv.appendChild(colourDiv);
+    });
+
+    console.log(newColourPalette);
+
     return newColourPalette.map(colour => parseRGB(colour).map(c => c / 255));
 }
 
