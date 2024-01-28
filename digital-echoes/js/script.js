@@ -18,6 +18,7 @@ let interactive = false;
 let contrast = 0.5;
 let prevFrame = [];
 let motion = 0.2;
+let colourPalette = [[0, 0.5, 0], [0, 0, 0.5], [0.5, 0, 0]];
 
 const processFrame = (ctx, parameterType) => {
     if (video.paused || video.ended) return;
@@ -33,6 +34,9 @@ const processFrame = (ctx, parameterType) => {
         const adjustedMaxPixels = maxPixels / 1.8;
         const maxTotalMotion = maxPossibleDifference * adjustedMaxPixels;
         parameter = getMotion(ctx, maxTotalMotion);
+    }
+    else if (parameterType === 'colour') {
+        parameter = getColours(ctx);
     }
     return parameter;
 }
@@ -89,6 +93,69 @@ const getMotion = (ctx, maxTotalMotion) => {
     prevFrame = imageData;
 
     return motion;
+}
+const colourDifference = (colour1, colour2) => {
+    // Euclidean distance between two RGB colours https://en.wikipedia.org/wiki/Color_difference
+    const rDiff = colour1[0] - colour2[0];
+    const gDiff = colour1[1] - colour2[1];
+    const bDiff = colour1[2] - colour2[2];
+    return Math.sqrt(rDiff * rDiff + gDiff * gDiff + bDiff * bDiff);
+}
+
+const parseRGB = (rgbString) => {
+    return rgbString.match(/\d+/g).map(Number);
+}
+
+const getColours = (ctx) => {
+    const colourAmount = 3;
+    const differenceThreshold = 100;
+
+    // get pixel data from the canvas
+    const imageData = ctx.getImageData(0, 0, canvasV.width, canvasV.height).data;
+
+    // make object with colour and how many times it appears
+    const colourCounts = {};
+    for (let i = 0; i < imageData.length; i += 4) {
+        const colour = [imageData[i], imageData[i + 1], imageData[i + 2]];
+        const colourString = `rgb(${colour[0]}, ${colour[1]}, ${colour[2]})`;
+        if (colourString in colourCounts) {
+            colourCounts[colourString] = colourCounts[colourString] + 1;
+        } else {
+            colourCounts[colourString] = 1;
+        }
+    }
+
+    // sort colours by how many times they appear
+    const sortedColours = Object.keys(colourCounts).sort((a, b) => colourCounts[b] - colourCounts[a]);
+
+    // get the most common colours that are different enough and not too close to black
+    let newColourPalette = [];
+    for (let i = 0; i < sortedColours.length; i++) {
+        let currentColour = sortedColours[i];
+
+        let currentParsedColour = parseRGB(currentColour);
+        let isWhite = false; let isBlack = false;
+        if (currentParsedColour[0] > 240 || currentParsedColour[1] > 240 || currentParsedColour[2] > 240) {
+            isWhite = true;
+        }
+        if (currentParsedColour[0] < 60 || currentParsedColour[1] < 60 || currentParsedColour[2] < 60) {
+            isBlack = true;
+        }
+
+
+        const include = newColourPalette.every(paletteColour => {
+            const difference = colourDifference(
+                parseRGB(currentColour),
+                parseRGB(paletteColour)
+            );
+            return difference >= differenceThreshold;
+        });
+
+        if (include && newColourPalette.length < colourAmount && !isWhite && !isBlack) {
+            newColourPalette.push(currentColour);
+        }
+    }
+    return newColourPalette.map(colour => parseRGB(colour).map(c => c / 255));
 }
 
 const createProgram = (gl, vs, fs) => {
@@ -152,6 +219,9 @@ const initShaders = (canvas, fs, gl, ctx, parameter) => {
     const u_resolutionLocation1 = gl.getUniformLocation(program1, "u_resolution");
     const u_contrastLocation1 = gl.getUniformLocation(program1, "u_contrast");
     const u_motionLocation1 = gl.getUniformLocation(program1, "u_motion");
+    const u_colourALocation1 = gl.getUniformLocation(program1, "colourA");
+    const u_colourBLocation1 = gl.getUniformLocation(program1, "colourB");
+    const u_colourCLocation1 = gl.getUniformLocation(program1, "colourC");
 
     const program1Buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, program1Buffer);
@@ -225,6 +295,33 @@ const initShaders = (canvas, fs, gl, ctx, parameter) => {
                     }
                 }
             }
+            else if (parameter === 'colour') {
+                if (Math.floor(time) % 2000 < 15) {
+                    colourPalette = processFrame(ctx, parameter);
+
+                    if (colourPalette === undefined) {
+                        colourPalette = [[0, 0.5, 0], [0, 0, 0.5], [0.5, 0, 0]];
+                    }
+                    for (let i = 0; i < 3; i++) {
+                        if (colourPalette[i] === undefined) {
+                            switch (i) {
+                                case 0:
+                                    colourPalette[i] = [(i + 1) / 3, 0, 0];
+                                    break;
+                                case 1:
+                                    colourPalette[i] = [0, (i + 1) / 3, 0];
+                                    break;
+                                case 2:
+                                    colourPalette[i] = [0, 0, (i + 1) / 3];
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                    }
+                    console.log(colourPalette);
+                }
+            }
         }
 
         // render the first program into the texture in the framebuffer
@@ -232,6 +329,9 @@ const initShaders = (canvas, fs, gl, ctx, parameter) => {
         // assign uniforms
         gl.uniform1f(u_timeLocation1, time / 1000);
         gl.uniform2f(u_resolutionLocation1, canvas.width, canvas.height);
+        gl.uniform3f(u_colourALocation1, colourPalette[0][0], colourPalette[0][1], colourPalette[0][2]);
+        gl.uniform3f(u_colourBLocation1, colourPalette[1][0], colourPalette[1][1], colourPalette[1][2]);
+        gl.uniform3f(u_colourCLocation1, colourPalette[2][0], colourPalette[2][1], colourPalette[2][2]);
         gl.uniform1f(u_contrastLocation1, contrast);
         gl.uniform1f(u_motionLocation1, motion);
         gl.bindVertexArray(program1VAO);
@@ -270,7 +370,7 @@ const init = () => {
     initVideo();
     canvases1.forEach(canvas => initArtwork(canvas, fArtwork1Source, 'contrast'));
     canvases2.forEach(canvas => initArtwork(canvas, fArtwork2Source, 'motion'));
-    canvases3.forEach(canvas => initArtwork(canvas, fArtwork3Source));
+    canvases3.forEach(canvas => initArtwork(canvas, fArtwork3Source, 'colour'));
 }
 
 init();
