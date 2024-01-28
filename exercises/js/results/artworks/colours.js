@@ -104,15 +104,6 @@ vec3 gradient(vec3 colourA, vec3 colourB, vec2 st, float size, vec2 offset) {
     st += offset;
     return mix(colourA, colourB, snoise(st)*.5+.5);
 }
-float polygon( vec2 st, int sides, float size, vec2 offset ) {
-    st = st *2.-1.;
-    st += offset;
-    float a = atan(st.x,st.y)+PI;
-	float r = TWO_PI/float(sides);
-    float d = cos(floor(.5+a/r)*r-a)*length(st);
-    float result = 1.0-smoothstep(size,size+0.01,d);
-    return result;
-}
 float stripedPolygon( vec2 st, int sides, float size, vec2 offset, int stripesAmount, float stripeWidth ) {
     stripeWidth -= 0.5;
     st = st *2.-1.;
@@ -161,55 +152,58 @@ float circle(in vec2 _st, in float _radius){
 	return 1.-smoothstep(_radius-(_radius*0.01), _radius+(_radius*0.01), dot(dist,dist)*4.0);
 }
 
+float thickness( float u_time ) {
+    return max(0.005, (sin(u_time/1.5))/10.);
+}
 void main() {
 
     vec2 st = gl_FragCoord.xy/u_resolution.xy;
 
     vec3 colour = vec3(0.0);
 
-    // vec3 stripes = vec3(0.0);
-    // for (int i = 10; i <= 12; ++i) {
-    //     vec2 offsetShape = (vec2(random(floor(u_time)/2. + float(i)), random(floor(u_time)/2. + float(i) + 1.)) - 0.5);
-    //     vec2 offsetGradient = (vec2(noise((u_time) * 1.5 - 1.), noise((u_time) * 1.5 - 2.)));
+    vec3 stripes = vec3(0.0);
+    for (int i = 10; i <= 12; ++i) {
+        vec2 offsetShape = (vec2(random(floor(u_time)/2. + float(i)), random(floor(u_time)/2. + float(i) + 1.)) - 0.5);
+        vec2 offsetGradient = (vec2(noise((u_time) * 1.5 - 1.), noise((u_time) * 1.5 - 2.)));
 
-    //     vec3 gradient = gradient(colourA, vec3(0.,0.2,0.), st, 2., offsetGradient);
-    //     float shape = stripedPolygon(st, 2, 0.2, offsetShape, 8, 0.8);
+        vec3 gradient = gradient(colourA, vec3(0.1,0.1,0.), st, 2., offsetGradient);
+        float shape = stripedPolygon(st, 2, 0.2, offsetShape, 8, 0.8);
 
-    //     stripes += (vec3(shape) * gradient) / 2.;
-    // }
-    // colour += mix(colour, stripes, 1.);
+        stripes += (vec3(shape) * gradient) / 2.;
+    }
+    colour += mix(colour, stripes, 1.);
 
 
-    vec2 placement1 = vec2(-0.15, -0.15);
+
+    vec2 placement1 = vec2(-0.15, -0.15) + (noise(u_time) * 2. - 1.) / 100.;
     vec2 st1 = st + placement1;
     st1 -= 0.5;
-    st1 = rotate2d(u_time) * st1;
+    st1 = rotate2d(cos(u_time)) * st1;
     st1 += 0.5;
-    vec3 gradient1 = gradient(colourA, colourB, st, 2., vec2(noise((u_time) * 1.5), noise((u_time) * 1.5 - 1.)));
-    vec3 shape1 = star(st1, vec2(1., 0.05));
+    vec3 gradient1 = gradient(colourA, vec3(0.1), st, 2., vec2(noise((u_time) * 1.5), noise((u_time) * 1.5 - 1.)));
+    vec3 shape1 = star(st1, vec2(1., thickness(u_time)));
     shape1 *= circle(st1, 0.2);
-    colour += mix(colour, shape1 * gradient1, 0.8);
+    colour += mix(colour, shape1 * gradient1, 1.);
 
-
-    vec2 placement2 = vec2(0.15, 0.);
+    vec2 placement2 = vec2(0.15, 0.) + (noise(u_time+2.) * 2. - 1.) / 100.;;
     vec2 st2 = st + placement2;
     st2 -= 0.5;
-    st2 = rotate2d(-u_time) * st2;
+    st2 = rotate2d(-cos(u_time+2.)) * st2;
     st2 += 0.5;
-    vec3 gradient2 = gradient(colourB, colourC, st, 2., vec2(noise((u_time) * 1.5 +1.), noise((u_time) * 1.5 + 2.)));
-    vec3 shape2 = star(st2, vec2(1., 0.05));
+    vec3 gradient2 = gradient(colourB, vec3(0.1), st, 2., vec2(noise((u_time) * 1.5 +1.), noise((u_time) * 1.5 + 2.)));
+    vec3 shape2 = star(st2, vec2(1., thickness(u_time + 3.)));
     shape2 *= circle(st2, 0.2);
-    colour += mix(colour, shape2 * gradient2, 0.8);
+    colour += mix(colour, shape2 * gradient2, 1.);
 
-    vec2 placement3 = vec2(-0.1, 0.15);
+    vec2 placement3 = vec2(-0.1, 0.15) + (noise(u_time+3.) * 2. - 1.) / 100.;;
     vec2 st3 = st + placement3;
     st3 -= 0.5;
-    st3 = rotate2d(-u_time) * st3;
+    st3 = rotate2d(-cos(u_time+3.)) * st3;
     st3 += 0.5;
-    vec3 gradient3 = gradient(colourC, colourA, st, 2., vec2(noise((u_time) * 1.5 +3.), noise((u_time) * 1.5 + 4.)));
-    vec3 shape3 = star(st3, vec2(1., 0.05));
+    vec3 gradient3 = gradient(colourC, vec3(0.1), st, 2., vec2(noise((u_time) * 1.5 +3.), noise((u_time) * 1.5 + 4.)));
+    vec3 shape3 = star(st3, vec2(1., thickness(u_time + 5.)));
     shape3 *= circle(st3, 0.2);
-    colour += mix(colour, shape3 * gradient3, 0.8);
+    colour += mix(colour, shape3 * gradient3, 1.);
 
     outColor += vec4(colour, 1.0);
 }
