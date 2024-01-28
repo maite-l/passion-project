@@ -132,6 +132,35 @@ float noise(float st) {
 }
 
 
+float box(in vec2 _st, in vec2 _size){
+    _size = vec2(0.5) - _size*0.5;
+    vec2 uv = smoothstep(_size, _size+vec2(0.001), _st);
+    uv *= smoothstep(_size, _size+vec2(0.001), vec2(1.0)-_st);
+    return uv.x*uv.y;
+}
+mat2 rotate2d(float _angle){
+    return mat2(cos(_angle),-sin(_angle),
+                sin(_angle),cos(_angle));
+}
+
+vec3 star(vec2 st, vec2 size) {
+    vec3 shape = vec3(0.0);
+
+    for (int i = 0; i < 8; ++i) {
+        st -= 0.5;
+        float angle = PI * float(i) / float(8.);
+        st = rotate2d(angle) * st;
+        st += 0.5;
+        shape = mix(shape, vec3(1.), box(st, size));
+    }
+    return shape;
+}
+
+float circle(in vec2 _st, in float _radius){
+    vec2 dist = _st-vec2(0.5);
+	return 1.-smoothstep(_radius-(_radius*0.01), _radius+(_radius*0.01), dot(dist,dist)*4.0);
+}
+
 void main() {
 
     vec2 st = gl_FragCoord.xy/u_resolution.xy;
@@ -148,59 +177,39 @@ void main() {
 
     //     stripes += (vec3(shape) * gradient) / 2.;
     // }
-    // colour += mix(colour, stripes, 0.5);
+    // colour += mix(colour, stripes, 1.);
 
 
-    vec3 squares = vec3(0.0);
-    for (int i = 1; i <= 2; ++i) {
-        vec2 offsetShape = (vec2(random(floor(u_time)/2. + float(i)), random(floor(u_time)/2. + float(i) + 1.)) - 0.5);
-        vec2 offsetGradient = (vec2(noise((u_time) * 1.5 - 1.), noise((u_time) * 1.5 - 2.)));
-
-        vec3 gradient = gradient(colourA, vec3(0.2,0.,0.), st, 2., offsetGradient);
-        float shape = stripedPolygon(st, 4, 0.3, offsetShape, 8, 0.4);
-        float background = polygon(st, 4, 0.3, offsetShape);
-
-        squares += polygon(st, 4, 0.3, offsetShape) / 5. * colourB;
-        squares += (shape / 5.);
-        squares += (vec3(shape) * gradient) / 2.;
-    }
-    colour += mix(colour, squares, 1.);
+    vec2 placement1 = vec2(-0.15, -0.15);
+    vec2 st1 = st + placement1;
+    st1 -= 0.5;
+    st1 = rotate2d(u_time) * st1;
+    st1 += 0.5;
+    vec3 gradient1 = gradient(colourA, colourB, st, 2., vec2(noise((u_time) * 1.5), noise((u_time) * 1.5 - 1.)));
+    vec3 shape1 = star(st1, vec2(1., 0.05));
+    shape1 *= circle(st1, 0.2);
+    colour += mix(colour, shape1 * gradient1, 0.8);
 
 
-    vec3 triangles = vec3(0.0);
-    for (int i = 20; i <= 21; ++i) {
-        vec2 offsetShape = (vec2(random(floor(u_time)/2. + float(i)), random(floor(u_time)/2. + float(i) + 1.)) - 0.5);
-        vec2 offsetGradient = (vec2(noise((u_time) * 1.5 - 1.), noise((u_time) * 1.5 - 2.)));
+    vec2 placement2 = vec2(0.15, 0.);
+    vec2 st2 = st + placement2;
+    st2 -= 0.5;
+    st2 = rotate2d(-u_time) * st2;
+    st2 += 0.5;
+    vec3 gradient2 = gradient(colourB, colourC, st, 2., vec2(noise((u_time) * 1.5 +1.), noise((u_time) * 1.5 + 2.)));
+    vec3 shape2 = star(st2, vec2(1., 0.05));
+    shape2 *= circle(st2, 0.2);
+    colour += mix(colour, shape2 * gradient2, 0.8);
 
-        vec3 gradient = gradient(colourC, vec3(0.,0.,0.2), st, 2., offsetGradient);
-        float shape = stripedPolygon(st, 3, 0.15, offsetShape, 12, 0.6);
-        float background = polygon(st, 3, 0.15, offsetShape);
-
-        triangles += polygon(st, 3, 0.15, offsetShape) / 5. * colourC;
-        triangles += (shape / 5.);
-        triangles += (vec3(shape) * gradient) / 2.;
-    }
-    colour += mix(colour, triangles, 1.);
-
-
-
-
-
-    // vec2 offset2 = (vec2(noise(floor(u_time)/2.+1.), noise(floor(u_time)/2.+2.))-0.5);
-    // vec3 gradient2 = gradient(colourB, colourC, st, 2., vec2(0.840,0.750)-offset2);
-    // float shape2 = stripedPolygon(st, 3, 0.2, offset2, 7, 0.5);
-    // vec3 gradientShape2 = vec3(shape2) * gradient2;
-    // colour += polygon(st, 3, 0.2, offset2)/5.*colourB;
-    // colour += (shape2/5.);
-    // colour += gradientShape2/2.;
-
-    // vec2 offset3 = (vec2(noise(floor(u_time)/2.), noise(floor(u_time)/2.+3.))-0.5);
-    // vec3 gradient3 = gradient(colourC, colourA, st, 2., vec2(2.840,1.)-offset3);
-    // float shape3 = stripedPolygon(st, 6, 0.3, offset3, 8, 0.4);
-    // vec3 gradientShape3 = vec3(shape3) * gradient3;
-    // colour += polygon(st, 6, 0.3, offset3)/5.*colourC;
-    // colour += (shape3/5.);
-    // colour += gradientShape3/2.;
+    vec2 placement3 = vec2(-0.1, 0.15);
+    vec2 st3 = st + placement3;
+    st3 -= 0.5;
+    st3 = rotate2d(-u_time) * st3;
+    st3 += 0.5;
+    vec3 gradient3 = gradient(colourC, colourA, st, 2., vec2(noise((u_time) * 1.5 +3.), noise((u_time) * 1.5 + 4.)));
+    vec3 shape3 = star(st3, vec2(1., 0.05));
+    shape3 *= circle(st3, 0.2);
+    colour += mix(colour, shape3 * gradient3, 0.8);
 
     outColor += vec4(colour, 1.0);
 }
@@ -638,32 +647,6 @@ const initShaders = () => {
     animate();
 }
 
-
-// https://stackoverflow.com/questions/13806483/increase-or-decrease-color-saturation
-const saturate = (colour, value) => {
-
-    for (var i = 0; i > 3; i += 1) {
-        var r = colour[i];
-        var g = colour[i + 1];
-        var b = colour[i + 2];
-        var gray = 0.2989 * r + 0.5870 * g + 0.1140 * b; //weights from CCIR 601 spec
-        colour[i] = -gray * value + colour[i] * (1 + value);
-        colour[i + 1] = -gray * value + colour[i + 1] * (1 + value);
-        colour[i + 2] = -gray * value + colour[i + 2] * (1 + value);
-        //normalize over- and under-saturated values
-        if (colour[i] > 255) colour[i] = 255;
-        if (colour[i + 1] > 255) colour[i] = 255;
-        if (colour[i + 2] > 255) colour[i] = 255;
-        if (colour[i] < 0) colour[i] = 0;
-        if (colour[i + 1] < 0) colour[i] = 0;
-        if (colour[i + 2] < 0) colour[i] = 0;
-    }
-
-    colour = 'rgb(' + colour[0] + ',' + colour[1] + ',' + colour[2] + ')';
-    return colour;
-};
-
-
 const colourDifference = (colour1, colour2) => {
     // Euclidean distance between two RGB colours https://en.wikipedia.org/wiki/Color_difference
     const rDiff = colour1[0] - colour2[0];
@@ -703,9 +686,6 @@ const getColours = () => {
     for (let i = 0; i < sortedColours.length; i++) {
         let currentColour = sortedColours[i];
 
-        //saturate the colour
-        currentColour = saturate(parseRGB(currentColour), 0.7);
-
         let currentParsedColour = parseRGB(currentColour);
         let isWhite = false; let isBlack = false;
         if (currentParsedColour[0] > 240 || currentParsedColour[1] > 240 || currentParsedColour[2] > 240) {
@@ -728,6 +708,16 @@ const getColours = () => {
             newColourPalette.push(currentColour);
         }
     }
+
+    // add to result div
+    resultDiv.innerHTML = '';
+    newColourPalette.forEach(colour => {
+        const colourDiv = document.createElement('div');
+        colourDiv.style.backgroundColor = colour;
+        colourDiv.style.width = '50px';
+        colourDiv.style.height = '50px';
+        resultDiv.appendChild(colourDiv);
+    });
 
     return newColourPalette.map(colour => parseRGB(colour).map(c => c / 255));
 }
