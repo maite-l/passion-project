@@ -18,29 +18,135 @@ out vec4 outColor;
 uniform float u_time;
 uniform vec2 u_resolution;
 
-uniform vec3 colorA;
-uniform vec3 colorB;
-uniform vec3 colorC;
+uniform vec3 colourA;
+uniform vec3 colourB;
+uniform vec3 colourC;
 
-// vec3 colorA = vec3(0.089,0.110,0.109);
-// vec3 colorB = vec3(0.965,0.912,0.095);
-// vec3 colorC = vec3(0.940,0.008,0.053);
+#define PI 3.14159265359
+#define TWO_PI 6.28318530718
+
+// Some useful functions
+vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+
+//
+// Description : GLSL 2D simplex noise function
+//      Author : Ian McEwan, Ashima Arts
+//  Maintainer : ijm
+//     Lastmod : 20110822 (ijm)
+//     License :
+//  Copyright (C) 2011 Ashima Arts. All rights reserved.
+//  Distributed under the MIT License. See LICENSE file.
+//  https://github.com/ashima/webgl-noise
+//
+float snoise(vec2 v) {
+
+    // Precompute values for skewed triangular grid
+    const vec4 C = vec4(0.211324865405187,
+                        // (3.0-sqrt(3.0))/6.0
+                        0.366025403784439,
+                        // 0.5*(sqrt(3.0)-1.0)
+                        -0.577350269189626,
+                        // -1.0 + 2.0 * C.x
+                        0.024390243902439);
+                        // 1.0 / 41.0
+
+    // First corner (x0)
+    vec2 i  = floor(v + dot(v, C.yy));
+    vec2 x0 = v - i + dot(i, C.xx);
+
+    // Other two corners (x1, x2)
+    vec2 i1 = vec2(0.0);
+    i1 = (x0.x > x0.y)? vec2(1.0, 0.0):vec2(0.0, 1.0);
+    vec2 x1 = x0.xy + C.xx - i1;
+    vec2 x2 = x0.xy + C.zz;
+
+    // Do some permutations to avoid
+    // truncation effects in permutation
+    i = mod289(i);
+    vec3 p = permute(
+            permute( i.y + vec3(0.0, i1.y, 1.0))
+                + i.x + vec3(0.0, i1.x, 1.0 ));
+
+    vec3 m = max(0.5 - vec3(
+                        dot(x0,x0),
+                        dot(x1,x1),
+                        dot(x2,x2)
+                        ), 0.0);
+
+    m = m*m ;
+    m = m*m ;
+
+    // Gradients:
+    //  41 pts uniformly over a line, mapped onto a diamond
+    //  The ring size 17*17 = 289 is close to a multiple
+    //      of 41 (41*7 = 287)
+
+    vec3 x = 2.0 * fract(p * C.www) - 1.0;
+    vec3 h = abs(x) - 0.5;
+    vec3 ox = floor(x + 0.5);
+    vec3 a0 = x - ox;
+
+    // Normalise gradients implicitly by scaling m
+    // Approximation of: m *= inversesqrt(a0*a0 + h*h);
+    m *= 1.79284291400159 - 0.85373472095314 * (a0*a0+h*h);
+
+    // Compute final noise value at P
+    vec3 g = vec3(0.0);
+    g.x  = a0.x  * x0.x  + h.x  * x0.y;
+    g.yz = a0.yz * vec2(x1.x,x2.x) + h.yz * vec2(x1.y,x2.y);
+    return 130.0 * dot(m, g);
+}
+
+vec3 gradient(vec3 colourA, vec3 colourB, vec2 st, float size, vec2 offset) {
+    st *= size;
+    st += offset;
+    return mix(colourA, colourB, snoise(st)*.5+.5);
+}
+float polygon( vec2 st, int sides, float size, vec2 offset ) {
+    st = st *2.-1.;
+    st += offset;
+    float a = atan(st.x,st.y)+PI;
+	float r = TWO_PI/float(sides);
+    float d = cos(floor(.5+a/r)*r-a)*length(st);
+    float result = 1.0-smoothstep(size,size+0.01,d);
+    return result;
+}
+float stripedPolygon( vec2 st, int sides, float size, vec2 offset, int stripesAmount, float stripeWidth ) {
+    stripeWidth -= 0.5;
+    st = st *2.-1.;
+    st += offset;
+    float a = atan(st.x,st.y)+PI;
+	float r = TWO_PI/float(sides);
+    float d = cos(floor(.5+a/r)*r-a)*length(st);
+    float shape = 1.0-smoothstep(size+stripeWidth,size+stripeWidth+0.1,fract(d*float(stripesAmount)*2.+0.5));
+    return shape *= 1.0-smoothstep(size,size+0.01,d);
+}
+
 
 void main() {
 
     vec2 st = gl_FragCoord.xy/u_resolution.xy;
 
-    st.x += sin(u_time)/10.;
+    vec3 colour = vec3(0.);
 
-    float pct1 = step(1./3., st.x);
-	float pct2 = step(2./3., st.x);
+    vec3 gradient1 = gradient(colourA, colourB, st, 2., vec2(0.840,0.750));
+    float shape1 = stripedPolygon(st, 4, 0.5, vec2(0.5,0.5), 7, 0.5);
+    vec3 gradientShape1 = vec3(shape1) * gradient1;
+    colour += gradientShape1/1.5;
 
+    vec3 gradient2 = gradient(colourB, colourC, st, 2., vec2(0.840,0.750));
+    float shape2 = stripedPolygon(st, 3, 0.5, vec2(0.,0.25), 7, 0.5);
+     vec3 gradientShape2 = vec3(shape2) * gradient2;
+    colour += gradientShape2/1.5;
 
-    vec3 color = mix(colorA, colorB, pct1);
-    color *= mix(colorB, colorC, pct2);
+    vec3 gradient3 = gradient(colourC, colourA, st, 2., vec2(0.840,0.750));
+    float shape3 = stripedPolygon(st, 6, 0.5, vec2(-0.5,-0.5), 7, 0.5);
+    vec3 gradientShape3 = vec3(shape3) * gradient3;
+    colour += gradientShape3/1.5;
 
-
-    outColor = vec4(color, 1.0);
+    outColor += vec4(colour, 1.0);
 }
 `;
 const vertexShader2Source = `#version 300 es
@@ -362,9 +468,9 @@ const initShaders = () => {
 
     const u_timeLocation1 = gl.getUniformLocation(program1, "u_time");
     const u_resolutionLocation1 = gl.getUniformLocation(program1, "u_resolution");
-    const u_colourALocation1 = gl.getUniformLocation(program1, "colorA");
-    const u_colourBLocation1 = gl.getUniformLocation(program1, "colorB");
-    const u_colourCLocation1 = gl.getUniformLocation(program1, "colorC");
+    const u_colourALocation1 = gl.getUniformLocation(program1, "colourA");
+    const u_colourBLocation1 = gl.getUniformLocation(program1, "colourB");
+    const u_colourCLocation1 = gl.getUniformLocation(program1, "colourC");
 
     const program1Buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, program1Buffer);
@@ -479,7 +585,7 @@ const parseRGB = (rgbString) => {
 
 const getColours = () => {
     const colourAmount = 3;
-    const differenceThreshold = 100;
+    const differenceThreshold = 120;
 
     // get pixel data from the canvas
     const imageData = ctx.getImageData(0, 0, canvasV.width, canvasV.height).data;
