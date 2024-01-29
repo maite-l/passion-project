@@ -5,157 +5,59 @@ import fArtwork3Source from './shaders/frag_artwork-3.glsl?raw';
 import fPPRawSource from './shaders/frag_post-processing.glsl?raw';
 import vPPSource from './shaders/vert_post-processing.glsl?raw';
 
-// for shaders
-const canvases1 = document.querySelectorAll('.artwork1');
-const canvases2 = document.querySelectorAll('.artwork2');
-const canvases3 = document.querySelectorAll('.artwork3');
+import { getColours, getMotion, getContrast } from './get-parameter.js';
 
 // for video parameters
 const video = document.querySelector('.video');
 const canvasV = document.querySelector('.video_canvas');
 
 let interactive = false;
-let contrast = 0.5;
-let prevFrame = [];
-let motion = 0.2;
-let colourPalette = [[0.562, 0.516, 0.912], [0.544, 0.805, 0.298], [0.141, 0.368, 0.775]];
+const defaultContrast = 0.5; const defaultMotion = 0.2; const defaultColourPalette = [[0.562, 0.516, 0.912], [0.544, 0.805, 0.298], [0.141, 0.368, 0.775]];
+let contrast = defaultContrast; let motion = defaultMotion; let colourPalette = defaultColourPalette;
+
+
+const initVideo = () => {
+    // get webcam stream
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+            video.srcObject = stream;
+        })
+        .catch(error => {
+            console.error('Error accessing webcam:', error);
+        });
+
+    // wait for the video metadata to load
+    video.addEventListener('loadedmetadata', () => {
+        canvasV.width = video.videoWidth;
+        canvasV.height = video.videoHeight;
+    });
+}
+
+const initArtwork = (canvas, fragmentShaderRaw, parameter) => {
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+    const gl = canvas.getContext('webgl2');
+    const ctx = canvasV.getContext('2d');
+    initShaders(canvas, fragmentShaderRaw, gl, ctx, parameter);
+};
 
 const processFrame = (ctx, parameterType) => {
     if (video.paused || video.ended) return;
     ctx.drawImage(video, 0, 0, canvasV.width, canvasV.height);
 
-    let parameter;
     if (parameterType === 'contrast') {
-        parameter = getContrast(ctx);
+        return getContrast(ctx, canvasV);
     }
     else if (parameterType === 'motion') {
         const maxPossibleDifference = 255;
         const maxPixels = canvasV.width * canvasV.height;
-        const adjustedMaxPixels = maxPixels / 1.8;
+        const adjustedMaxPixels = maxPixels / 5;
         const maxTotalMotion = maxPossibleDifference * adjustedMaxPixels;
-        parameter = getMotion(ctx, maxTotalMotion);
+        return getMotion(ctx, maxTotalMotion, canvasV);
     }
     else if (parameterType === 'colour') {
-        parameter = getColours(ctx);
+        return getColours(ctx, canvasV);
     }
-    return parameter;
-}
-
-const getContrast = (ctx) => {
-    // get pixel data from the canvas
-    const imageData = ctx.getImageData(0, 0, canvasV.width, canvasV.height).data;
-
-    // calculate the average luminance of the image + normalise
-    let totalLuminance = 0;
-    for (let i = 0; i < imageData.length; i += 4) {
-        totalLuminance += (0.299 * imageData[i] + 0.587 * imageData[i + 1] + 0.114 * imageData[i + 2]);
-    }
-    const averageLuminance = totalLuminance / imageData.length / 4;
-    const normalisedAvgLuminance = averageLuminance / 255;
-
-    // calculate the mean squared difference between each pixel and the average luminance 
-    let squaredDeviationsSum = 0;
-    for (let i = 0; i < imageData.length; i += 4) {
-        const luminance = (0.299 * imageData[i] + 0.587 * imageData[i + 1] + 0.114 * imageData[i + 2]);
-        const normalisedLuminance = luminance / 255;
-        const difference = normalisedLuminance - normalisedAvgLuminance;
-        squaredDeviationsSum += difference * difference;
-    }
-
-    const variance = squaredDeviationsSum / imageData.length / 4;
-
-    //const standardDeviation = Math.sqrt(variance);
-
-    // adjust contrast so max and min can be reached easily
-    const adjustedContrast = variance * 100 / 2;
-
-    // cap contrast at 1
-    return Math.min(adjustedContrast, 1);
-}
-const getMotion = (ctx, maxTotalMotion) => {
-
-    const differenceThreshold = 50;
-    let totalMotion = 0;
-
-    const imageData = ctx.getImageData(0, 0, canvasV.width, canvasV.height).data;
-
-    // calculate the average luminance of the image + normalise
-    for (let i = 0; i < imageData.length; i += 4) {
-        const red = imageData[i];
-        // if there is enough difference between the current and previous frame in the red channel, add it to the total
-        if (prevFrame[i] && Math.abs(prevFrame[i] - red) > differenceThreshold) {
-            totalMotion += Math.abs(prevFrame[i] - red);
-        }
-    }
-    motion = Math.min(totalMotion / maxTotalMotion, 1);
-
-    // save the current frame for the next iteration
-    prevFrame = imageData;
-
-    return motion;
-}
-const colourDifference = (colour1, colour2) => {
-    // Euclidean distance between two RGB colours https://en.wikipedia.org/wiki/Color_difference
-    const rDiff = colour1[0] - colour2[0];
-    const gDiff = colour1[1] - colour2[1];
-    const bDiff = colour1[2] - colour2[2];
-    return Math.sqrt(rDiff * rDiff + gDiff * gDiff + bDiff * bDiff);
-}
-
-const parseRGB = (rgbString) => {
-    return rgbString.match(/\d+/g).map(Number);
-}
-
-const getColours = (ctx) => {
-    const colourAmount = 3;
-    const differenceThreshold = 100;
-
-    // get pixel data from the canvas
-    const imageData = ctx.getImageData(0, 0, canvasV.width, canvasV.height).data;
-
-    // make object with colour and how many times it appears
-    const colourCounts = {};
-    for (let i = 0; i < imageData.length; i += 4) {
-        const colour = [imageData[i], imageData[i + 1], imageData[i + 2]];
-        const colourString = `rgb(${colour[0]}, ${colour[1]}, ${colour[2]})`;
-        if (colourString in colourCounts) {
-            colourCounts[colourString] = colourCounts[colourString] + 1;
-        } else {
-            colourCounts[colourString] = 1;
-        }
-    }
-
-    // sort colours by how many times they appear
-    const sortedColours = Object.keys(colourCounts).sort((a, b) => colourCounts[b] - colourCounts[a]);
-
-    // get the most common colours that are different enough and not too close to black
-    let newColourPalette = [];
-    for (let i = 0; i < sortedColours.length; i++) {
-        let currentColour = sortedColours[i];
-
-        let currentParsedColour = parseRGB(currentColour);
-        let isWhite = false; let isBlack = false;
-        if (currentParsedColour[0] > 240 || currentParsedColour[1] > 240 || currentParsedColour[2] > 240) {
-            isWhite = true;
-        }
-        if (currentParsedColour[0] < 60 || currentParsedColour[1] < 60 || currentParsedColour[2] < 60) {
-            isBlack = true;
-        }
-
-
-        const include = newColourPalette.every(paletteColour => {
-            const difference = colourDifference(
-                parseRGB(currentColour),
-                parseRGB(paletteColour)
-            );
-            return difference >= differenceThreshold;
-        });
-
-        if (include && newColourPalette.length < colourAmount && !isWhite && !isBlack) {
-            newColourPalette.push(currentColour);
-        }
-    }
-    return newColourPalette.map(colour => parseRGB(colour).map(c => c / 255));
 }
 
 const createProgram = (gl, vs, fs) => {
@@ -179,23 +81,6 @@ const createProgram = (gl, vs, fs) => {
     }
 
     return program;
-}
-
-const initVideo = () => {
-    // get webcam stream
-    navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => {
-            video.srcObject = stream;
-        })
-        .catch(error => {
-            console.error('Error accessing webcam:', error);
-        });
-
-    // wait for the video metadata to load
-    video.addEventListener('loadedmetadata', () => {
-        canvasV.width = video.videoWidth;
-        canvasV.height = video.videoHeight;
-    });
 }
 
 const initShaders = (canvas, fs, gl, ctx, parameter) => {
@@ -282,7 +167,7 @@ const initShaders = (canvas, fs, gl, ctx, parameter) => {
                     contrast = processFrame(ctx, parameter);
                     console.log('contrast: ' + contrast);
                     if (contrast === undefined) {
-                        contrast = 0.5;
+                        contrast = defaultContrast;
                     }
                 }
             }
@@ -291,7 +176,7 @@ const initShaders = (canvas, fs, gl, ctx, parameter) => {
                     motion = processFrame(ctx, parameter);
                     console.log('motion: ' + motion);
                     if (motion === undefined) {
-                        motion = 0.5;
+                        motion = defaultMotion;
                     }
                 }
             }
@@ -300,19 +185,11 @@ const initShaders = (canvas, fs, gl, ctx, parameter) => {
                     colourPalette = processFrame(ctx, parameter);
 
                     if (colourPalette === undefined) {
-                        colourPalette = [[0.562, 0.516, 0.912], [0.544, 0.805, 0.298], [0.141, 0.368, 0.775]];
+                        colourPalette = defaultColourPalette;
                     }
                     for (let i = 0; i < 3; i++) {
                         if (colourPalette[i] === undefined) {
-                            if (i === 0) {
-                                colourPalette[i] = [0.562, 0.516, 0.912];
-                            }
-                            else if (i === 1) {
-                                colourPalette[i] = [0.544, 0.805, 0.298];
-                            }
-                            else if (i === 2) {
-                                colourPalette[i] = [0.141, 0.368, 0.775];
-                            }
+                            colourPalette[i] = defaultColourPalette[i];
                         }
                     }
                     console.log(colourPalette);
@@ -353,17 +230,16 @@ const initShaders = (canvas, fs, gl, ctx, parameter) => {
     animate();
 }
 
-const initArtwork = (canvas, fragmentShaderRaw, parameter) => {
-    canvas.width = canvas.clientWidth;
-    canvas.height = canvas.clientHeight;
-    const gl = canvas.getContext('webgl2');
-    const ctx = canvasV.getContext('2d');
-    initShaders(canvas, fragmentShaderRaw, gl, ctx, parameter);
-};
 
 const init = () => {
     interactive = document.body.classList.contains('interactive');
-    initVideo();
+    if (interactive) {
+        initVideo();
+    }
+
+    const canvases1 = document.querySelectorAll('.artwork1');
+    const canvases2 = document.querySelectorAll('.artwork2');
+    const canvases3 = document.querySelectorAll('.artwork3');
     canvases1.forEach(canvas => initArtwork(canvas, fArtwork1Source, 'contrast'));
     canvases2.forEach(canvas => initArtwork(canvas, fArtwork2Source, 'motion'));
     canvases3.forEach(canvas => initArtwork(canvas, fArtwork3Source, 'colour'));
