@@ -6,6 +6,7 @@ out vec4 outColor;
 
 uniform float u_time;
 uniform vec2 u_resolution;
+uniform float u_seed;
 
 uniform vec3 colourA;
 uniform vec3 colourB;
@@ -146,13 +147,13 @@ void main() {
 
     vec2 st = gl_FragCoord.xy / u_resolution.xy;
     st.x *= u_resolution.x / u_resolution.y;
-    st.x -= 0.35f;
+    st.x -= 0.35f - random(u_seed) / 10.f;
 
     vec3 colour = vec3(0.0f);
 
     vec3 stripes = vec3(0.0f);
     for(int i = 10; i <= 12; ++i) {
-        vec2 offsetShape = (vec2(random(floor(u_time) / 2.f + float(i)), random(floor(u_time) / 2.f + float(i) + 1.f)) - 0.5f);
+        vec2 offsetShape = (vec2(0, random(floor(u_time) / 2.f + float(i) + u_seed)) - 0.5f);
         vec2 offsetGradient = (vec2(noise((u_time) * 1.5f - 1.f), noise((u_time) * 1.5f - 2.f)));
 
         vec3 gradient = gradient(colourA, vec3(0.1f, 0.1f, 0.f), st, 2.f, offsetGradient);

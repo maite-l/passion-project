@@ -14,7 +14,7 @@ const canvasV = document.querySelector('.video_canvas');
 let interactive = false;
 const defaultContrast = 0.5; const defaultMotion = 0.2; const defaultColourPalette = [[0.562, 0.516, 0.912], [0.544, 0.805, 0.298], [0.141, 0.368, 0.775]];
 let contrast = defaultContrast; let motion = defaultMotion; let colourPalette = defaultColourPalette;
-
+let seed;
 
 const initVideo = () => {
     // get webcam stream
@@ -107,6 +107,7 @@ const initShaders = (canvas, fs, gl, ctx, parameter) => {
     const u_colourALocation1 = gl.getUniformLocation(program1, "colourA");
     const u_colourBLocation1 = gl.getUniformLocation(program1, "colourB");
     const u_colourCLocation1 = gl.getUniformLocation(program1, "colourC");
+    const u_seed = gl.getUniformLocation(program1, "u_seed");
 
     const program1Buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, program1Buffer);
@@ -207,6 +208,7 @@ const initShaders = (canvas, fs, gl, ctx, parameter) => {
         gl.uniform3f(u_colourCLocation1, colourPalette[2][0], colourPalette[2][1], colourPalette[2][2]);
         gl.uniform1f(u_contrastLocation1, contrast);
         gl.uniform1f(u_motionLocation1, motion);
+        gl.uniform1f(u_seed, seed);
         gl.bindVertexArray(program1VAO);
         // bind buffer to draw into it
         gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
@@ -236,6 +238,8 @@ const init = () => {
     if (interactive) {
         initVideo();
     }
+
+    seed = Math.random();
 
     const canvases1 = document.querySelectorAll('.artwork1');
     const canvases2 = document.querySelectorAll('.artwork2');

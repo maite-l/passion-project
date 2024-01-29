@@ -7,6 +7,7 @@ out vec4 outColor;
 uniform float u_time;
 uniform vec2 u_resolution;
 uniform float u_contrast;
+uniform float u_seed;
 
 float random(in vec2 _st) {
     return fract(sin(dot(_st.xy, vec2(12.9898f, 78.233f))) *
@@ -116,6 +117,10 @@ float sdCircle(vec2 p, float r) {
     return length(p) - r;
 }
 
+float random(float x) {
+    return fract(sin(x) * 10000.0f);
+}
+
 #define PI 3.1415926535897932384626433832795
 
 void main() {
@@ -130,15 +135,15 @@ void main() {
     vec3 colourC = 1.f - vec3(0.28f, 0.07f, 0.11f);
     vec3 colourD = 1.f - vec3(1.0f, 0.77f, 0.75f);
 
-    vec3 grid1 = grid(st, 10.f, vec2(floor(u_time / 4.f)), 0.3f);
+    vec3 grid1 = grid(st, 10.f, vec2(floor((u_time) / 4.f) + floor(random(u_seed) * 20.f)), 0.3f);
     colour = mix(colour, colourA, grid1);
 
-    vec3 grid2 = grid(st, 5.f, vec2(floor(u_time / 4.f)), 0.2f);
+    vec3 grid2 = grid(st, 5.f, vec2(floor(-u_time / 4.f) + floor(random(u_seed + 2.f) * 10.f)), 0.2f);
     float stripe = step(0.75f, fract((st.x) * 50.f));
     vec3 stripeGrid = grid2 * stripe;
     colour = mix(colour, colourC, stripeGrid);
 
-    vec3 grid3 = grid(st, 20.f, vec2(floor(u_time / 4.f)), 0.2f);
+    vec3 grid3 = grid(st, 20.f, vec2(floor(u_time / 4.f) + floor(random(u_seed + 5.f) * 5.f)), 0.2f);
     colour = mix(colour, colourB, grid3);
 
     st *= 10.f;
@@ -148,7 +153,7 @@ void main() {
     colour = mix(colour, vec3(1.f), circle1);
 
     float skew = ((ipos.y + 1.f) * u_contrast) * 5.f;
-    float skewedRandomValue = random(vec2(pow(ipos.x, skew), pow(ipos.y, skew)));
+    float skewedRandomValue = random(vec2(pow(ipos.x + random(u_seed) / 1000.f, skew), pow(ipos.y + random(u_seed) / 1000.f, skew)));
 
     if(skewedRandomValue == 0.f) {
         if(random(ipos) > 0.75f) {

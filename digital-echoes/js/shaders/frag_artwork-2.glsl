@@ -7,6 +7,7 @@ out vec4 outColor;
 uniform float u_time;
 uniform vec2 u_resolution;
 uniform float u_motion;
+uniform float u_seed;
 
 #define PI 3.14159265359
 #define ANIMATION_LENGTH 6.
@@ -161,8 +162,8 @@ void main() {
     vec2 index = floor(st);
     st = fract(st);
 
-    float randomXOffset = (random(index) * 2.f - 1.f) / 10.f;
-    float randomYOffset = (random(index + 1.f) * 2.f - 1.f) / 10.f;
+    float randomXOffset = (random(index + u_seed) * 2.f - 1.f) / 10.f;
+    float randomYOffset = (random(index - u_seed) * 2.f - 1.f) / 10.f;
     st += vec2(randomXOffset, randomYOffset);
 
     float randomTimeOffset = (random(index + 2.f) * 2.f - 1.f) / 10.f;
