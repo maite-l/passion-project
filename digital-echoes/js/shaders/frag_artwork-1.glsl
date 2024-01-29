@@ -102,11 +102,11 @@ float circle(in vec2 _st, in float _radius) {
 
 vec2 truchetPattern(in vec2 _st, in float _index) {
     _index = fract(((_index - 0.5f) * 2.0f));
-    if(_index > 0.75f) {
+    if(_index > 0.80f) {
         _st = vec2(1.0f) - _st;
-    } else if(_index > 0.5f) {
+    } else if(_index > 0.60f) {
         _st = vec2(1.0f - _st.x, _st.y);
-    } else if(_index > 0.25f) {
+    } else if(_index > 0.40f) {
         _st = 1.0f - vec2(1.0f - _st.x, _st.y);
     }
     return _st;
@@ -147,7 +147,7 @@ void main() {
     float circle1 = circle(st, 0.001f);
     colour = mix(colour, vec3(1.f), circle1);
 
-    float skew = (ipos.y + 1.f) * u_contrast;
+    float skew = ((ipos.y + 1.f) * u_contrast) * 5.f;
     float skewedRandomValue = random(vec2(pow(ipos.x, skew), pow(ipos.y, skew)));
 
     if(skewedRandomValue == 0.f) {
@@ -158,9 +158,17 @@ void main() {
 
     vec2 tile = truchetPattern(fpos, skewedRandomValue);
 
-    float curve1 = circle(tile + vec2(0.5f, 0.5f), 1.25f);
-    float curve2 = circle(tile + vec2(0.5f, 0.5f), .75f);
-    float pattern = curve1 - curve2;
+    float pattern;
+
+    if(skewedRandomValue > 0.2f) {
+        float curve1 = circle(tile + vec2(0.5f, 0.5f), 1.25f);
+        float curve2 = circle(tile + vec2(0.5f, 0.5f), .75f);
+        pattern = curve1 - curve2;
+    }
+
+    pattern += circle(tile + vec2(0.f, 0.5f), 0.01f);
+    pattern += circle(tile + vec2(0.5f, 0.f), 0.01f);
+
     pattern += circle(tile + vec2(0.f, -0.5f), 0.01f);
     pattern += circle(tile + vec2(-0.5f, 0.f), 0.01f);
 
