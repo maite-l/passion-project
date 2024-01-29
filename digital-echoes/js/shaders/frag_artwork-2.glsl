@@ -166,7 +166,7 @@ void main() {
     st += vec2(randomXOffset, randomYOffset);
 
     float randomTimeOffset = (random(index + 2.f) * 2.f - 1.f) / 10.f;
-    float time = u_time + randomTimeOffset;
+    float time = u_time + randomTimeOffset + 2.f;
 
     st = rotate(st, time * PI / 2.f);
     st = scale(st, vec2(0.8f));

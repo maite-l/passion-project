@@ -18,7 +18,7 @@ let interactive = false;
 let contrast = 0.5;
 let prevFrame = [];
 let motion = 0.2;
-let colourPalette = [[0, 0.5, 0], [0, 0, 0.5], [0.5, 0, 0]];
+let colourPalette = [[0.562, 0.516, 0.912], [0.544, 0.805, 0.298], [0.141, 0.368, 0.775]];
 
 const processFrame = (ctx, parameterType) => {
     if (video.paused || video.ended) return;
@@ -300,22 +300,18 @@ const initShaders = (canvas, fs, gl, ctx, parameter) => {
                     colourPalette = processFrame(ctx, parameter);
 
                     if (colourPalette === undefined) {
-                        colourPalette = [[0, 0.5, 0], [0, 0, 0.5], [0.5, 0, 0]];
+                        colourPalette = [[0.562, 0.516, 0.912], [0.544, 0.805, 0.298], [0.141, 0.368, 0.775]];
                     }
                     for (let i = 0; i < 3; i++) {
                         if (colourPalette[i] === undefined) {
-                            switch (i) {
-                                case 0:
-                                    colourPalette[i] = [(i + 1) / 3, 0, 0];
-                                    break;
-                                case 1:
-                                    colourPalette[i] = [0, (i + 1) / 3, 0];
-                                    break;
-                                case 2:
-                                    colourPalette[i] = [0, 0, (i + 1) / 3];
-                                    break;
-                                default:
-                                    break;
+                            if (i === 0) {
+                                colourPalette[i] = [0.562, 0.516, 0.912];
+                            }
+                            else if (i === 1) {
+                                colourPalette[i] = [0.544, 0.805, 0.298];
+                            }
+                            else if (i === 2) {
+                                colourPalette[i] = [0.141, 0.368, 0.775];
                             }
                         }
                     }
