@@ -19,23 +19,31 @@
 }
 
 .introduction__title--title {
-    font-size: 5.8rem;
+    font-size: clamp(3rem, 3.8rem + 2.2vi, 5.8rem);
     font-weight: 700;
     line-height: 1;
 }
 
 .introduction__title--subtitle {
-    font-size: 2.5rem;
+    font-size: clamp(1.8rem, 2rem + 1vi, 2.8rem);
     line-height: 0.5;
 }
 .introduction__explanation {
     font-family: 'elza', sans-serif;
     font-weight: 300;
 }
-.introduction__explanation span {
-    font-weight: 600;
-}
 
+
+@media screen and (max-width: 1150px) {
+    .introduction {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .introduction__title--subtitle {
+        line-height: 1;
+    }
+}
 
 .overview {
     display: flex;
@@ -64,6 +72,24 @@ canvas {
     height: 45vh;
     object-fit: cover;
     object-position: center;
+}
+
+@media screen and (max-width: 768px) {
+    .overview {
+        flex-direction: column;
+    }
+    .overview__content {
+        flex-direction: column;
+        animation: none;
+    }
+    .overview__content--double {
+        display: none;
+    }
+    canvas {
+        width: 100%;
+        height: 50vh;
+    
+    }
 }
 
 

@@ -17,15 +17,18 @@ let contrast = defaultContrast; let motion = defaultMotion; let colourPalette = 
 let seed;
 
 const initVideo = () => {
+    console.log('init video');
     // get webcam stream
     navigator.mediaDevices.getUserMedia({ video: true })
         .then(stream => {
             video.srcObject = stream;
+            console.log('video stream');
         })
         .catch(error => {
             console.error('Error accessing webcam:', error);
             const videoError = document.querySelector('.video__error');
             videoError.style.display = 'flex';
+            document.querySelector('.loading').style.display = 'none';
         });
 
     // wait for the video metadata to load
@@ -250,9 +253,19 @@ const init = () => {
 
     seed = Math.random();
 
-    const canvases1 = document.querySelectorAll('.artwork1');
-    const canvases2 = document.querySelectorAll('.artwork2');
-    const canvases3 = document.querySelectorAll('.artwork3');
+    let canvases1, canvases2, canvases3;
+
+    console.log(window.innerWidth);
+
+    if (window.innerWidth <= 768) {
+        canvases1 = document.querySelectorAll('.artwork1__mobile');
+        canvases2 = document.querySelectorAll('.artwork2__mobile');
+        canvases3 = document.querySelectorAll('.artwork3__mobile');
+    } else {
+        canvases1 = document.querySelectorAll('.artwork1');
+        canvases2 = document.querySelectorAll('.artwork2');
+        canvases3 = document.querySelectorAll('.artwork3');
+    }
     canvases1.forEach(canvas => initArtwork(canvas, fArtwork1Source, 'contrast'));
     canvases2.forEach(canvas => initArtwork(canvas, fArtwork2Source, 'motion'));
     canvases3.forEach(canvas => initArtwork(canvas, fArtwork3Source, 'colour'));

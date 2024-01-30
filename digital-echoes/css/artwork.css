@@ -33,7 +33,7 @@ canvas {
     color: #000000;
     z-index: 1;
     padding: 0 1rem;
-    max-width: 20%;
+    width: fit-content;
 }
 
 .info__icon {
@@ -47,6 +47,8 @@ canvas {
     display: none;
     padding-block-start: 0.5rem;
     padding-block-end: 1rem;
+    min-width: 15rem;
+    width: 25vw;
 }
 
 .info__description--header {
@@ -59,7 +61,7 @@ canvas {
     line-height: 1.2;
     font-family: 'elza', sans-serif;
     font-weight: 500;
-    max-width: 90%;
+    max-width: 80%;
 }
 .info__description--close {
     font-size: 1.5rem;
@@ -94,6 +96,7 @@ canvas {
     font-weight: 300;
     text-align: center;
     padding: 0.5rem 0.8rem;
+    margin-inline: 0.5rem;
 }
 
 
