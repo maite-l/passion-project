@@ -162,8 +162,8 @@ void main() {
     vec2 index = floor(st);
     st = fract(st);
 
-    float randomXOffset = (random(index + u_seed) * 2.f - 1.f) / 10.f;
-    float randomYOffset = (random(index - u_seed) * 2.f - 1.f) / 10.f;
+    float randomXOffset = (random(index + u_seed) * 2.f - 1.f) * (u_motion/2.);
+    float randomYOffset = (random(index - u_seed) * 2.f - 1.f) * (u_motion/2.);
     st += vec2(randomXOffset, randomYOffset);
 
     float randomTimeOffset = (random(index + 2.f) * 2.f - 1.f) / 10.f;

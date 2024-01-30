@@ -20,14 +20,28 @@
         <canvas class="artwork1"></canvas>
     </div>
 
+    <div class="video__error">
+        <p>Error accessing webcam. The artwork is currently not being influenced.</p>
+    </div>
+
     <div class="info">
         <p class="info__icon">i</p>
         <div class="info__description">
-            <p class="info__description--close">x</p>
-            <p class="info__description--text">Lorem ipsum dolor sit amet consectetur adipisicing elit. Totam quaerat obcaecati rerum, nostrum debitis impedit expedita laborum! Corporis molestias consectetur debitis illum, itaque deleniti cum, non modi, veniam perspiciatis deserunt?</p>
+            <div class="info__description--header">
+                <p class="info__description--title">How does my webcam influence this artwork?</p>
+                <p class="info__description--close">x</p>
+            </div>
+            <p class="info__description--text">
+                This artwork responds to the amount of contrast it detects in your webcam input. As the contrast
+                increases, the white pattern gets pushed further away down to the bottom.
+            </p>
+            <p class="info__description--text">
+                Control the artwork by determining the amound of contrast your webcam picks up on. Darker surroundings
+                will decrease the contrast, while a bright lit room will result in full contrast.
+            </p>
         </div>
     </div>
-    
+
     <canvas class="video_canvas"></canvas>
     <video playsinline autoplay class="video"></video>
 

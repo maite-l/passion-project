@@ -20,19 +20,31 @@
         <canvas class="artwork3"></canvas>
     </div>
 
+    <div class="video__error">
+        <p>Error accessing webcam. The artwork is currently not being influenced.</p>
+    </div>
+
     <div class="info">
         <p class="info__icon">i</p>
         <div class="info__description">
-            <p class="info__description--close">x</p>
-            <p class="info__description--text">Lorem ipsum dolor sit amet consectetur adipisicing elit. Totam quaerat
-                obcaecati rerum, nostrum debitis impedit expedita laborum! Corporis molestias consectetur debitis illum,
-                itaque deleniti cum, non modi, veniam perspiciatis deserunt?</p>
+            <div class="info__description--header">
+                <p class="info__description--title">How does my webcam influence this artwork?</p>
+                <p class="info__description--close">x</p>
+            </div>
+            <p class="info__description--text">
+                The colours the artworks picks up on through your webcam input, are reflected in the colours of the
+                artwork.
+            </p>
+            <p class="info__description--text">
+                Maybe you're already wearing a bright sweater that shows up in the artwork? Hold up different coloured
+                objects to control the colours used.
+            </p>
         </div>
     </div>
-    
+
     <canvas class="video_canvas"></canvas>
     <video playsinline autoplay class="video"></video>
-    
+
     <script type="module" src="../js/script.js"></script>
     <script type="module" src="../js/info-button.js"></script>
 </body>

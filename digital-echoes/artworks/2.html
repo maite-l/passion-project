@@ -20,19 +20,30 @@
         <canvas class="artwork2"></canvas>
     </div>
 
+        <div class="video__error">
+            <p>Error accessing webcam. The artwork is currently not being influenced.</p>
+        </div>
+
     <div class="info">
         <p class="info__icon">i</p>
         <div class="info__description">
-            <p class="info__description--close">x</p>
-            <p class="info__description--text">Lorem ipsum dolor sit amet consectetur adipisicing elit. Totam quaerat
-                obcaecati rerum, nostrum debitis impedit expedita laborum! Corporis molestias consectetur debitis illum,
-                itaque deleniti cum, non modi, veniam perspiciatis deserunt?</p>
+            <div class="info__description--header">
+                <p class="info__description--title">How does my webcam influence this artwork?</p>
+                <p class="info__description--close">x</p>
+            </div>
+            <p class="info__description--text">
+                This artwork looks at the amount of motion in webcam input. The more
+                movement it detects, the more the pattern gets repeated, and the more chaos is introduced.
+            </p>
+            <p class="info__description--text">
+                Sway your body to slightly increase the fracturing, or flail your arms around to ensue full chaos.
+            </p>
         </div>
     </div>
-    
+
     <canvas class="video_canvas"></canvas>
     <video playsinline autoplay class="video"></video>
-    
+
     <script type="module" src="../js/script.js"></script>
     <script type="module" src="../js/info-button.js"></script>
 </body>

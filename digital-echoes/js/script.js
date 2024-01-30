@@ -24,6 +24,8 @@ const initVideo = () => {
         })
         .catch(error => {
             console.error('Error accessing webcam:', error);
+            const videoError = document.querySelector('.video__error');
+            videoError.style.display = 'flex';
         });
 
     // wait for the video metadata to load
