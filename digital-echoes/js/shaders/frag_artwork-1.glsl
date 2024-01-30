@@ -4,10 +4,20 @@ precision highp float;
 
 out vec4 outColor;
 
+#define PI 3.1415926535897932384626433832795
+
 uniform float u_time;
 uniform vec2 u_resolution;
 uniform float u_contrast;
 uniform float u_seed;
+
+
+
+// ------ RANDOM AND NOISE FUNCTIONS
+
+float random(float x) {
+    return fract(sin(x) * 10000.0f);
+}
 
 float random(in vec2 _st) {
     return fract(sin(dot(_st.xy, vec2(12.9898f, 78.233f))) *
@@ -87,7 +97,11 @@ float snoise(vec2 v) {
     return 130.0f * dot(m, g);
 }
 
+
+// ------ SHAPES
+
 vec3 grid(vec2 st, float size, vec2 offset, float threshold) {
+    //generating noise to use as value for step function
     st *= size;
     st += offset;
     vec2 ipos = floor(st);
@@ -101,7 +115,11 @@ float circle(in vec2 _st, in float _radius) {
     return 1.f - smoothstep(_radius - (_radius * 0.01f), _radius + (_radius * 0.01f), dot(dist, dist) * 4.0f);
 }
 
+
+// ------ TRUCHET TILES
+
 vec2 truchetPattern(in vec2 _st, in float _index) {
+    //limits are at 0.8, 0.6, 0.4 so when everything below 0.2 is removed, the distribution is even
     _index = fract(((_index - 0.5f) * 2.0f));
     if(_index > 0.80f) {
         _st = vec2(1.0f) - _st;
@@ -113,70 +131,77 @@ vec2 truchetPattern(in vec2 _st, in float _index) {
     return _st;
 }
 
-float sdCircle(vec2 p, float r) {
-    return length(p) - r;
-}
 
-float random(float x) {
-    return fract(sin(x) * 10000.0f);
-}
 
-#define PI 3.1415926535897932384626433832795
+vec3 colourA = 1.f - vec3(0.16f, 0.0f, 0.03f);
+vec3 colourB = 1.f - vec3(0.25f, 0.04f, 0.08f);
+vec3 colourC = 1.f - vec3(0.28f, 0.07f, 0.11f);
+vec3 colourD = 1.f - vec3(1.0f, 0.77f, 0.75f);
 
 void main() {
 
     vec2 st = gl_FragCoord.xy / u_resolution.xy;
     st.x *= u_resolution.x / u_resolution.y;
 
+    //background colour
     vec3 colour = 1.f - vec3(0.05f, 0.05f, 0.09f);
 
-    vec3 colourA = 1.f - vec3(0.16f, 0.0f, 0.03f);
-    vec3 colourB = 1.f - vec3(0.25f, 0.04f, 0.08f);
-    vec3 colourC = 1.f - vec3(0.28f, 0.07f, 0.11f);
-    vec3 colourD = 1.f - vec3(1.0f, 0.77f, 0.75f);
 
+    //BACKGROUND GRIDS OF SQUARES
+    //moves every 4 seconds using floored time
+
+    //small squares
     vec3 grid1 = grid(st, 10.f, vec2(floor((u_time) / 4.f) + floor(random(u_seed) * 20.f)), 0.3f);
     colour = mix(colour, colourA, grid1);
 
+    //striped squares
     vec3 grid2 = grid(st, 5.f, vec2(floor(-u_time / 4.f) + floor(random(u_seed + 2.f) * 10.f)), 0.2f);
     float stripe = step(0.75f, fract((st.x) * 50.f));
     vec3 stripeGrid = grid2 * stripe;
     colour = mix(colour, colourC, stripeGrid);
 
+    //large squares
     vec3 grid3 = grid(st, 20.f, vec2(floor(u_time / 4.f) + floor(random(u_seed + 5.f) * 5.f)), 0.2f);
     colour = mix(colour, colourB, grid3);
 
+
+
+    //TRUCHET TILES
+
+    //repeat
     st *= 10.f;
     vec2 ipos = floor(st);
     vec2 fpos = fract(st);
-    float circle1 = circle(st, 0.001f);
-    colour = mix(colour, vec3(1.f), circle1);
 
+    //skew randomness along y axis
     float skew = ((ipos.y + 1.f) * u_contrast) * 5.f;
     float skewedRandomValue = random(vec2(pow(ipos.x + random(u_seed) / 1000.f, skew), pow(ipos.y + random(u_seed) / 1000.f, skew)));
-
     if(skewedRandomValue == 0.f) {
+        //reintroduce a litte randomness
         if(random(ipos) > 0.75f) {
             skewedRandomValue = random(ipos);
         }
     }
 
+    //truchet pattern: turn tiles according to random value
     vec2 tile = truchetPattern(fpos, skewedRandomValue);
 
     float pattern;
 
+    //add curves above threshold
     if(skewedRandomValue > 0.2f) {
         float curve1 = circle(tile + vec2(0.5f, 0.5f), 1.25f);
         float curve2 = circle(tile + vec2(0.5f, 0.5f), .75f);
         pattern = curve1 - curve2;
     }
 
+    //add circles at corners
     pattern += circle(tile + vec2(0.f, 0.5f), 0.01f);
     pattern += circle(tile + vec2(0.5f, 0.f), 0.01f);
-
     pattern += circle(tile + vec2(0.f, -0.5f), 0.01f);
     pattern += circle(tile + vec2(-0.5f, 0.f), 0.01f);
 
+    //animated variables for mask
     float animatedSize = sin((u_time - 1.f) / 2.f * PI) * 0.9f;
     float scaledAnimatedSize = abs(animatedSize) * 2.0f - 1.0f;
 
@@ -184,6 +209,7 @@ void main() {
     mask += circle(tile + vec2(-0.3f, -0.7f), max(0.0f, scaledAnimatedSize));
     mask += circle(tile + vec2(-0.7f, 0.3f), max(0.0f, scaledAnimatedSize));
 
+    //add mask to pattern
     pattern *= mask;
 
     colour = mix(colour, colourD, pattern);
