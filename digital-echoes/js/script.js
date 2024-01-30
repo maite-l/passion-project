@@ -171,6 +171,8 @@ const initShaders = (canvas, fs, gl, ctx, parameter) => {
                     console.log('contrast: ' + contrast);
                     if (contrast === undefined) {
                         contrast = defaultContrast;
+                    } else {
+                        document.querySelector('.loading').style.display = 'none';
                     }
                 }
             }
@@ -180,7 +182,10 @@ const initShaders = (canvas, fs, gl, ctx, parameter) => {
                     console.log('motion: ' + motion);
                     if (motion === undefined) {
                         motion = defaultMotion;
+                    } else {
+                        document.querySelector('.loading').style.display = 'none';
                     }
+
                 }
             }
             else if (parameter === 'colour') {
@@ -189,6 +194,8 @@ const initShaders = (canvas, fs, gl, ctx, parameter) => {
 
                     if (colourPalette === undefined) {
                         colourPalette = defaultColourPalette;
+                    } else {
+                        document.querySelector('.loading').style.display = 'none';
                     }
                     for (let i = 0; i < 3; i++) {
                         if (colourPalette[i] === undefined) {
