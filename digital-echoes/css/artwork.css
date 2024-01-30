@@ -20,3 +20,43 @@ canvas {
     object-fit: cover;
     object-position: center;
 }
+
+
+.info {
+    position: absolute;
+    bottom: 1rem;
+    left: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #ffffff;
+    color: #000000;
+    z-index: 1;
+    padding: 0 1rem;
+    max-width: 20%;
+}
+
+.info__icon {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-block-start: 0.2rem;
+    cursor: pointer;
+}
+
+.info__description {
+    display: none;
+    padding-block-start: 0.5rem;
+    padding-block-end: 1rem;
+}
+
+.info__description--close {
+    font-size: 1.5rem;
+    text-align: end;
+    cursor: pointer;
+}
+
+.info__description--text {
+    font-size: 1rem;
+    font-family: 'elza', sans-serif;
+    font-weight: 300;
+}
