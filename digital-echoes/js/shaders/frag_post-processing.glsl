@@ -11,9 +11,9 @@ in vec2 v_texCoord;
 out vec4 outColor;
 
 #define BLOOM_BLEND_AMOUNT 64.
-#define BLOOM_INTENSITY 6.
+#define BLOOM_INTENSITY 8.
 
-#define GRAIN_INTENSITY 0.15
+#define GRAIN_INTENSITY 0.1
 
 #define DUST_AMOUNT 0.15
 
@@ -190,7 +190,7 @@ vec4 abberation(vec2 uv, vec4 color) {
 // --- PIXELATION FUNCTION
 
 vec2 pixelate(vec2 uv) {
-    float pixels = 800.f;
+    float pixels = 1000.f;
     float dx = (u_resolution.x / pixels) * (1.0f / pixels);
     float dy = (u_resolution.y / pixels) * (1.0f / pixels);
     uv = vec2(dx * floor(uv.x / dx), dy * floor(uv.y / dy));
@@ -213,7 +213,7 @@ void main() {
 
     uv = shake(uv);
 
-    // uv = pixelate(uv);
+    uv = pixelate(uv);
 
     vec4 color = texture(u_texture, uv);
 
